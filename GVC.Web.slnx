@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GVC.Web.csproj" />
+  <Project Path="tests/GVC.Web.Tests/GVC.Web.Tests.csproj" />
+</Solution>

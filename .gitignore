@@ -1,0 +1,64 @@
+# Configurações com credenciais reais
+appsettings.json
+appsettings.Development.json
+appsettings.Production.json
+appsettings.*.Local.json
+
+# Configurações locais do Visual Studio
+*.csproj.user
+Properties/launchSettings.json
+.vs/
+.vscode/
+.idea/
+
+# Compilação .NET
+bin/
+obj/
+TestResults/
+*.trx
+coverage/
+coverage.*
+
+# Arquivos enviados/gerados pelos usuários
+wwwroot/uploads/
+wwwroot/uploads/**
+
+# Variáveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Bancos, backups e dumps
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.bacpac
+*.sql
+*.dump
+
+# Certificados e chaves privadas
+*.pfx
+*.p12
+*.pem
+*.key
+*.snk
+*.jks
+*.keystore
+
+# Logs e temporários
+*.log
+logs/
+temp/
+tmp/
+*.tmp
+
+# Publicação local
+publish/
+*.publishsettings
+Properties/PublishProfiles/*.pubxml.user
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini

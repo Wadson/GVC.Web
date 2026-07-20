@@ -1,0 +1,41 @@
+@page
+@model GVC.Web.Pages.Relatorios.VendasModel
+@{ViewData["Title"]="Relatório de vendas";}
+<h1>
+    Relatório de vendas
+</h1>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-auto">
+        <input name="inicio" type="date" value="@Model.Inicio.ToString("yyyy-MM-dd")" class="form-control">
+    </div>
+    <div class="col-auto">
+        <input name="fim" type="date" value="@Model.Fim.ToString("yyyy-MM-dd")" class="form-control">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-primary">
+            Atualizar
+        </button>
+    </div>
+</form>
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card card-body">
+            <small>
+                Quantidade
+            </small>
+            <strong class="fs-3">
+                @Model.Quantidade
+            </strong>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-body">
+            <small>
+                Total líquido
+            </small>
+            <strong class="fs-3">
+                @Model.Total.ToString("C")
+            </strong>
+        </div>
+    </div>
+</div>

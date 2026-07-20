@@ -1,0 +1,12 @@
+@model FechamentoCaixaViewModel
+@{ Layout = "_LayoutImpressao"; ViewData["Title"] = $"Fechamento do caixa #{Model.CaixaId}"; }
+<h1 class="document-title h4">Fechamento de Caixa #@Model.CaixaId</h1><p>@Model.Empresa.RazaoSocial — CNPJ @Model.Empresa.Cnpj</p>
+<div class="row row-cols-2 row-cols-md-4 g-2 mb-4">
+    <div class="col"><div class="border rounded p-2"><small>Saldo inicial</small><strong class="d-block">@Model.SaldoInicial.ToString("C")</strong></div></div>
+    <div class="col"><div class="border rounded p-2"><small>Final sistema</small><strong class="d-block">@Model.SaldoFinalSistema.ToString("C")</strong></div></div>
+    <div class="col"><div class="border rounded p-2"><small>Final informado</small><strong class="d-block">@Model.SaldoFinalInformado.ToString("C")</strong></div></div>
+    <div class="col"><div class="border rounded p-2"><small>Diferença</small><strong class="d-block">@Model.Diferenca.ToString("C")</strong></div></div>
+</div>
+<p><strong>Abertura:</strong> @Model.DataAbertura.ToString("dd/MM/yyyy HH:mm") por @Model.UsuarioAbertura<br /><strong>Fechamento:</strong> @(Model.DataFechamento?.ToString("dd/MM/yyyy HH:mm") ?? "Em aberto") @(Model.UsuarioFechamento is null ? "" : $"por {Model.UsuarioFechamento}")</p>
+<h2 class="h5 mt-4">Totais por forma de pagamento</h2><table class="table table-sm"><thead><tr><th>Forma</th><th class="text-end">Entradas</th><th class="text-end">Saídas</th><th class="text-end">Líquido</th></tr></thead><tbody>@foreach (var x in Model.TotaisPorForma) { <tr><td>@x.FormaPagamento</td><td class="text-end">@x.Entradas.ToString("C")</td><td class="text-end">@x.Saidas.ToString("C")</td><td class="text-end">@((x.Entradas-x.Saidas).ToString("C"))</td></tr> }</tbody></table>
+<h2 class="h5 mt-4">Sangrias e suprimentos</h2><table class="table table-sm"><thead><tr><th>Horário</th><th>Tipo / Histórico</th><th>Forma</th><th class="text-end">Valor</th></tr></thead><tbody>@foreach (var x in Model.SangriasSuprimentos) { <tr><td>@x.DataHora.ToString("dd/MM HH:mm")</td><td>@x.Tipo — @x.Historico</td><td>@x.FormaPagamento</td><td class="text-end">@x.Valor.ToString("C")</td></tr> }</tbody></table>

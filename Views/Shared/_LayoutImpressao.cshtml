@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - ERP GVC</title>
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        :root { --ink:#17212b; --line:#ced4da; }
+        body { color:var(--ink); background:#eef1f4; font:14px Arial,sans-serif; }
+        .print-toolbar { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid #ddd; padding:.75rem; }
+        .print-sheet { width:210mm; min-height:280mm; margin:20px auto; padding:14mm; background:#fff; box-shadow:0 3px 18px #0002; }
+        .company-logo { max-width:120px; max-height:70px; object-fit:contain; }
+        .document-title { color:#003366; font-weight:700; letter-spacing:.04em; }
+        .signature { width:70%; margin:55px auto 0; border-top:1px solid #222; text-align:center; padding-top:6px; }
+        table { page-break-inside:auto; } tr { page-break-inside:avoid; }
+        body.paper-80 .print-sheet { width:80mm; min-height:0; padding:4mm; margin:10px auto; font-size:11px; }
+        body.paper-58 .print-sheet { width:58mm; min-height:0; padding:3mm; margin:10px auto; font-size:9px; }
+        body.paper-80 .hide-thermal, body.paper-58 .hide-thermal { display:none!important; }
+        body.paper-80 .table, body.paper-58 .table { font-size:inherit; }
+        body.paper-80 .company-logo, body.paper-58 .company-logo { max-width:50mm; max-height:25mm; }
+        @@media print {
+            body { background:#fff!important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+            .no-print,.print-toolbar { display:none!important; }
+            .print-sheet { box-shadow:none; margin:0; width:auto; min-height:0; padding:8mm; }
+            body.paper-80 .print-sheet { width:72mm; padding:2mm; }
+            body.paper-58 .print-sheet { width:52mm; padding:1.5mm; }
+            a { color:inherit!important; text-decoration:none!important; }
+        }
+    </style>
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body>
+    <div class="print-toolbar no-print d-flex justify-content-center gap-2 align-items-center">
+        <label for="paperSize">Papel:</label>
+        <select id="paperSize" class="form-select form-select-sm" style="width:130px">
+            <option value="a4">A4</option><option value="paper-80">Térmica 80 mm</option><option value="paper-58">Térmica 58 mm</option>
+        </select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">Imprimir / salvar PDF</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="history.back()">Voltar</button>
+    </div>
+    <main class="print-sheet">@RenderBody()</main>
+    <script>
+        document.getElementById('paperSize')?.addEventListener('change', event => {
+            document.body.classList.remove('paper-80', 'paper-58');
+            if (event.target.value !== 'a4') document.body.classList.add(event.target.value);
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

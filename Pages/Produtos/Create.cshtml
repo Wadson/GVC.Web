@@ -1,0 +1,209 @@
+@page
+@model GVC.Web.Pages.Produtos.CreateModel
+@{ViewData["Title"]="Novo produto";}
+<h1>
+    Novo produto
+</h1>
+<form method="post" enctype="multipart/form-data" class="card">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="All" class="text-danger">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Nome
+            </label>
+            <input asp-for="Produto.NomeProduto" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Código de barras (EAN)
+            </label>
+            <input asp-for="Produto.GtinEan" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Referência
+            </label>
+            <input asp-for="Produto.Referencia" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                Unidade
+            </label>
+            <input asp-for="Produto.Unidade" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Preço de custo
+            </label>
+            <input asp-for="Produto.PrecoCusto" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Preço de compra
+            </label>
+            <input asp-for="Produto.PrecoCompra" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Preço de venda
+            </label>
+            <input asp-for="Produto.PrecoDeVenda" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                Estoque
+            </label>
+            <input asp-for="Produto.Estoque" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Validade
+            </label>
+            <input asp-for="Produto.DataValidade" type="date" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Status
+            </label>
+            <select asp-for="Produto.Status" class="form-select">
+                <option>
+                    Disponível
+                </option>
+                <option>
+                    Indisponível
+                </option>
+                <option>
+                    EmEspera
+                </option>
+                <option>
+                    Descontinuado
+                </option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Situação
+            </label>
+            <input asp-for="Produto.Situacao" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Fornecedor
+            </label>
+            <select asp-for="Produto.FornecedorId" asp-items="Model.Fornecedores" class="form-select">
+                <option value="">
+                    Nenhum
+                </option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Marca
+            </label>
+            <select asp-for="Produto.MarcaId" asp-items="Model.Marcas" class="form-select">
+                <option value="">
+                    Nenhuma
+                </option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Categoria
+            </label>
+            <select asp-for="Produto.CategoriaId" asp-items="Model.Categorias" class="form-select">
+                <option value="">
+                    Nenhuma
+                </option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                NCM
+            </label>
+            <input asp-for="Produto.Ncm" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                CEST
+            </label>
+            <input asp-for="Produto.Cest" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                Origem
+            </label>
+            <input asp-for="Produto.Origem" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                CFOP
+            </label>
+            <input asp-for="Produto.CfopPadrao" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                CSOSN
+            </label>
+            <input asp-for="Produto.Csosn" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                CST ICMS
+            </label>
+            <input asp-for="Produto.CstIcms" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                ICMS %
+            </label>
+            <input asp-for="Produto.AliquotaIcms" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                IPI %
+            </label>
+            <input asp-for="Produto.AliquotaIpi" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                PIS %
+            </label>
+            <input asp-for="Produto.AliquotaPis" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                COFINS %
+            </label>
+            <input asp-for="Produto.AliquotaCofins" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label asp-for="FotoUpload" class="form-label">
+                Imagem do produto
+            </label>
+            <input asp-for="FotoUpload" id="inputFoto" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="form-control" data-image-input data-image-preview="imagemPreview">
+            <small class="text-secondary">
+                JPG, JPEG, PNG ou WEBP — máximo 2 MB.
+            </small>
+            <span asp-validation-for="FotoUpload" class="text-danger">
+            </span>
+        </div>
+        <div class="col-md-3">
+            <img id="imagemPreview" src="/images/no-product.svg" class="img-thumbnail" style="width:180px;height:180px;object-fit:cover" alt="Pré-visualização da imagem">
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-page="Index" class="btn btn-light">
+            Cancelar
+        </a>
+        <button class="btn btn-primary">
+            Salvar produto
+        </button>
+    </div>
+</form>
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+    window.gvcImagePreview?.();
+</script>
+}

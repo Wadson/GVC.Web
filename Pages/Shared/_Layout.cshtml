@@ -1,0 +1,245 @@
+@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject GVC.Web.Data.ErpDbContext LayoutDb
+@{
+var empresaId=int.TryParse(User.FindFirstValue("EmpresaID"),out var selectedId)?selectedId:0;
+var empresaNome=User.FindFirstValue("EmpresaNome")??"Empresa não selecionada";
+var empresaOrigem=int.TryParse(User.FindFirstValue("UsuarioEmpresaID"),out var originId)?originId:0;
+var tipoUsuario=User.FindFirstValue("TipoUsuario")??User.FindFirstValue(ClaimTypes.Role)??string.Empty;
+var menuConfiguracoesAberto=Context.Request.Path.StartsWithSegments("/Configuracoes")||Context.Request.Path.StartsWithSegments("/Usuarios");
+var menuFinanceiroAberto=Context.Request.Path.StartsWithSegments("/Financeiro")||Context.Request.Path.StartsWithSegments("/PlanoContas");
+var menuRelatoriosAberto=Context.Request.Path.StartsWithSegments("/Relatorios")||Context.Request.Path.StartsWithSegments("/ContasAReceber/Relatorio");
+var empresas=User.IsInRole("Administrador")
+? await LayoutDb.Empresas.AsNoTracking().OrderBy(x=>x.NomeFantasia??x.RazaoSocial).Select(x=>new{x.EmpresaId,Nome=x.NomeFantasia??x.RazaoSocial}).ToListAsync()
+: await LayoutDb.Empresas.AsNoTracking().Where(x=>x.EmpresaId==empresaOrigem).Select(x=>new{x.EmpresaId,Nome=x.NomeFantasia??x.RazaoSocial}).ToListAsync();
+}
+<!doctype html>
+<html lang="pt-br">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>
+            @ViewData["Title"] - GVC ERP
+        </title>
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+        <link rel="stylesheet" href="~/css/erp.css" asp-append-version="true">
+    </head>
+    <body>
+        <div class="erp-shell">
+            <aside class="sidebar" id="sidebar">
+                <a href="/Dashboard" class="brand">
+                    <span class="bg-white rounded p-1 d-inline-flex align-items-center justify-content-center shadow-sm" style="width:48px;height:48px">
+                        <img src="@Url.Page("/Account/Login","LogoEmpresa",new{empresaId})" style="max-width:100%;max-height:100%;object-fit:contain" alt="Logo da empresa">
+                    </span>
+                    <span>
+                        GVC ERP
+                    </span>
+                </a>
+                <nav>
+                    <a href="/Dashboard">
+                        <i class="bi bi-grid">
+                        </i>
+                        <span>
+                            Dashboard
+                        </span>
+                    </a>
+                    <div class="nav-title">
+                        Cadastros
+                    </div>
+                    <a asp-page="/Clientes/Index">
+                        <i class="bi bi-people">
+                        </i>
+                        <span>
+                            Clientes
+                        </span>
+                    </a>
+                    <a asp-page="/Fornecedores/Index">
+                        <i class="bi bi-truck">
+                        </i>
+                        <span>
+                            Fornecedores
+                        </span>
+                    </a>
+                    <a asp-page="/Produtos/Index">
+                        <i class="bi bi-box">
+                        </i>
+                        <span>
+                            Produtos
+                        </span>
+                    </a>
+                    <a asp-page="/Vendedores/Index">
+                        <i class="bi bi-person-badge">
+                        </i>
+                        <span>
+                            Vendedores
+                        </span>
+                    </a>
+                    <a asp-page="/Usuarios/Index">
+                        <i class="bi bi-person-gear">
+                        </i>
+                        <span>
+                            Usuários
+                        </span>
+                    </a>
+                    <div class="nav-title">
+                        Operações
+                    </div>
+                    <a asp-page="/Vendas/PDV">
+                        <i class="bi bi-cart3">
+                        </i>
+                        <span>
+                            Vendas / PDV
+                        </span>
+                    </a>
+                    <a asp-page="/Estoque/Extrato">
+                        <i class="bi bi-clipboard-data">
+                        </i>
+                        <span>
+                            Estoque
+                        </span>
+                    </a>
+                    <a href="/Catalogo/Gerenciar">
+                        <i class="bi bi-shop"></i><span>Catálogo virtual</span>
+                    </a>
+                    <a href="/EntradaEstoque/Nova">
+                        <i class="bi bi-box-arrow-in-down"></i>
+                        <span>Entrada de estoque</span>
+                    </a>
+                    <a asp-page="/Caixa/Index">
+                        <i class="bi bi-cash-stack">
+                        </i>
+                        <span>
+                            Caixa
+                        </span>
+                    </a>
+                    <a data-bs-toggle="collapse" href="#menuFinanceiro" role="button" aria-expanded="@menuFinanceiroAberto.ToString().ToLowerInvariant()" aria-controls="menuFinanceiro">
+                        <i class="bi bi-wallet2"></i>
+                        <span>Financeiro</span>
+                        <i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <div class="collapse @(menuFinanceiroAberto ? "show" : null)" id="menuFinanceiro">
+                        <a asp-page="/Financeiro/Recebiveis/Index" class="ps-5">
+                            <i class="bi bi-cash-coin"></i>
+                            <span>Contas a receber</span>
+                        </a>
+                        <a asp-page="/Financeiro/ContasPagar/Index" class="ps-5">
+                            <i class="bi bi-receipt"></i>
+                            <span>Contas a pagar</span>
+                        </a>
+                        <a href="/PlanoContas" class="ps-5">
+                            <i class="bi bi-diagram-3"></i>
+                            <span>Plano de contas</span>
+                        </a>
+                    </div>
+                    <a asp-page="/Fiscal/NotasFiscais/Index">
+                        <i class="bi bi-receipt">
+                        </i>
+                        <span>
+                            Fiscal
+                        </span>
+                    </a>
+                    <div class="nav-title">
+                        Gestão
+                    </div>
+                    <a data-bs-toggle="collapse" href="#menuRelatorios" role="button" aria-expanded="@menuRelatoriosAberto.ToString().ToLowerInvariant()" aria-controls="menuRelatorios">
+                        <i class="bi bi-printer"></i><span>Relatórios e impressos</span><i class="bi bi-chevron-down ms-auto"></i>
+                    </a>
+                    <div class="collapse @(menuRelatoriosAberto ? "show" : null)" id="menuRelatorios">
+                        <a href="/Relatorios" class="ps-5"><i class="bi bi-files"></i><span>Central de documentos</span></a>
+                        <a asp-page="/Relatorios/Vendas" class="ps-5"><i class="bi bi-bar-chart"></i><span>Relatório de vendas</span></a>
+                        <a href="/ContasAReceber/RelatorioInadimplencia" class="ps-5"><i class="bi bi-person-exclamation"></i><span>Inadimplência</span></a>
+                        <a href="/Relatorios/Estoque" class="ps-5"><i class="bi bi-boxes"></i><span>Posição do estoque</span></a>
+                    </div>
+                    @if (User.IsInRole("Administrador"))
+                    {
+                        <div class="nav-title">
+                            Administração
+                        </div>
+                        <a asp-page="/Configuracoes/FormasPagamento/Index">
+                            <i class="bi bi-credit-card"></i>
+                            <span>Formas de pagamento</span>
+                        </a>
+                        <a data-bs-toggle="collapse" href="#menuConfiguracoes" role="button" aria-expanded="@menuConfiguracoesAberto.ToString().ToLowerInvariant()" aria-controls="menuConfiguracoes">
+                            <i class="bi bi-gear"></i>
+                            <span>Configurações</span>
+                            <i class="bi bi-chevron-down ms-auto"></i>
+                        </a>
+                        <div class="collapse @(menuConfiguracoesAberto ? "show" : null)" id="menuConfiguracoes">
+                            <a asp-page="/Configuracoes/Empresa/Index" class="ps-5">
+                                <i class="bi bi-building"></i>
+                                <span>Empresa</span>
+                            </a>
+                            <a asp-page="/Usuarios/Index" class="ps-5">
+                                <i class="bi bi-shield-lock"></i>
+                                <span>Permissões de usuários</span>
+                            </a>
+                        </div>
+                    }
+                </nav>
+            </aside>
+            <section class="main-area">
+                <header class="topbar">
+                    <button id="sidebarToggle" class="btn btn-light" aria-label="Alternar menu">
+                        <i class="bi bi-list">
+                        </i>
+                    </button>
+                    <form method="post" asp-page="/Account/SwitchCompany" class="ms-auto me-3">
+                        <input type="hidden" name="ReturnUrl" value="@(Context.Request.Path+Context.Request.QueryString)">
+                        <label for="empresaTopo" class="visually-hidden">
+                            Empresa ativa
+                        </label>
+                        <select id="empresaTopo" name="EmpresaId" class="form-select form-select-sm" onchange="this.form.submit()" title="Mudar empresa">
+                            @foreach(var empresa in empresas){
+                            <option value="@empresa.EmpresaId" selected="@(empresa.EmpresaId==empresaId)">
+                                @empresa.Nome
+                            </option>
+                            }
+                        </select>
+                    </form>
+                    <div class="dropdown">
+                        <button class="btn dropdown-toggle text-end" data-bs-toggle="dropdown">
+                            <small class="d-block text-secondary" style="font-size:.72rem">
+                                @empresaNome
+                            </small>
+                            <span>
+                                <i class="bi bi-person-circle">
+                                </i>
+                                @User.Identity?.Name
+                            </span>
+                            <small class="d-block text-secondary" style="font-size:.72rem">
+                                @tipoUsuario
+                            </small>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" asp-page="/Account/Logout">
+                                    Sair
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </header>
+                <main class="content">
+                    @if(TempData["Success"] is string success){
+                    <div class="alert alert-success">
+                        @success
+                    </div>
+                    }@if(TempData["Error"] is string error){
+                    <div class="alert alert-danger">
+                        @error
+                    </div>
+                    }@RenderBody()
+                </main>
+            </section>
+        </div>
+        <script src="~/lib/jquery/dist/jquery.min.js">
+        </script>
+        <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js">
+        </script>
+        <script src="~/js/site.js" asp-append-version="true">
+        </script>
+        @await RenderSectionAsync("Scripts",required:false)
+    </body>
+</html>

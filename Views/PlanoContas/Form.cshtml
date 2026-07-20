@@ -1,0 +1,49 @@
+@model PlanoContasFormViewModel
+@{
+    bool editando = Model.PlanoContasId > 0;
+    ViewData["Title"] = editando ? "Editar conta" : "Nova conta";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-1">@(editando ? "Editar conta" : "Nova conta")</h1>
+        <p class="text-secondary mb-0">Informe a classificação financeira da conta.</p>
+    </div>
+    <a href="/PlanoContas" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
+</div>
+
+<form action="@(editando ? "/PlanoContas/Editar" : "/PlanoContas/Criar")" method="post" class="card border-0 shadow-sm" style="max-width:760px">
+    @Html.AntiForgeryToken()
+    <input asp-for="PlanoContasId" type="hidden" />
+    <div class="card-body row g-3 p-4">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <div class="col-md-4">
+            <label asp-for="CodigoClassificacao" class="form-label"></label>
+            <input asp-for="CodigoClassificacao" class="form-control" placeholder="Ex.: 2.01" autofocus />
+            <span asp-validation-for="CodigoClassificacao" class="text-danger"></span>
+        </div>
+        <div class="col-md-8">
+            <label asp-for="Descricao" class="form-label"></label>
+            <input asp-for="Descricao" class="form-control" />
+            <span asp-validation-for="Descricao" class="text-danger"></span>
+        </div>
+        <div class="col-md-6">
+            <label asp-for="Tipo" class="form-label"></label>
+            <select asp-for="Tipo" class="form-select">
+                <option value="R">Receita</option>
+                <option value="D">Despesa / Custo</option>
+            </select>
+            <span asp-validation-for="Tipo" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="card-footer bg-white d-flex justify-content-end gap-2 py-3">
+        <a href="/PlanoContas" class="btn btn-light">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> @(editando ? "Salvar alterações" : "Cadastrar conta")
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="/Pages/Shared/_ValidationScriptsPartial.cshtml" />
+}

@@ -1,0 +1,62 @@
+@page
+@model GVC.Web.Pages.Clientes.IndexModel
+@{ViewData["Title"]="Clientes";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Clientes
+    </h1>
+    <a asp-page="Create" class="btn btn-primary">
+        Novo cliente
+    </a>
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Nome / Razão social
+                </th>
+                <th>
+                    Documento
+                </th>
+                <th>
+                    Telefone
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Ações
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Clientes){
+            <tr>
+                <td>
+                    @x.Nome
+                </td>
+                <td>
+                    @(x.Cpf??x.Cnpj)
+                </td>
+                <td>
+                    @x.Telefone
+                </td>
+                <td>
+                    @(x.Status==1?"Ativo":"Inativo")
+                </td>
+                <td class="text-end">
+                    <a asp-page="Edit" asp-route-id="@x.ClienteId" class="btn btn-sm btn-outline-primary">
+                        Alterar
+                    </a>
+                    <form method="post" asp-page-handler="Excluir" asp-route-id="@x.ClienteId" class="d-inline" onsubmit="return confirm('Excluir este cliente?')">
+                        <button class="btn btn-sm btn-outline-danger">
+                            Excluir
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,65 @@
+@page
+@model GVC.Web.Pages.Usuarios.IndexModel
+@{ViewData["Title"]="Usuários";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Usuários
+    </h1>
+    <a asp-page="Create" class="btn btn-primary">
+        Novo usuário
+    </a>
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Nome
+                </th>
+                <th>
+                    Usuário
+                </th>
+                <th>
+                    E-mail
+                </th>
+                <th>
+                    Perfil
+                </th>
+                <th class="text-end">
+                    Ações
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Usuarios){
+            <tr>
+                <td>
+                    @x.NomeCompleto
+                </td>
+                <td>
+                    @x.NomeUsuario
+                </td>
+                <td>
+                    @x.Email
+                </td>
+                <td>
+                    @x.TipoUsuario
+                </td>
+                <td class="text-end">
+                    <a href="/Configuracoes/Permissoes/@x.UsuarioId" class="btn btn-sm btn-outline-secondary">
+                        Permissões
+                    </a>
+                    <a asp-page="Edit" asp-route-id="@x.UsuarioId" class="btn btn-sm btn-outline-primary">
+                        Alterar
+                    </a>
+                    <form method="post" asp-page-handler="Excluir" asp-route-id="@x.UsuarioId" class="d-inline" onsubmit="return confirm('Excluir este usuário?')">
+                        <button class="btn btn-sm btn-outline-danger">
+                            Excluir
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

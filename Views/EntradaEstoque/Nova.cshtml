@@ -1,0 +1,484 @@
+@using System.Text.Json
+@model EntradaEstoqueViewModel
+@{
+    ViewData["Title"] = "Nova entrada de estoque";
+    string produtosJson = JsonSerializer.Serialize(Model.Produtos.Select(x => new
+    {
+        id = x.Id,
+        descricao = x.Descricao,
+        precoCompra = x.PrecoCompra,
+        precoCusto = x.PrecoCusto
+    }));
+}
+
+<style>
+    .xml-drop-zone { border: 2px dashed #7b9bb8; background: #f7fbff; transition: .2s; }
+    .xml-drop-zone.dragging { border-color: #003366; background: #eaf4ff; }
+    .entry-card { border: 0; box-shadow: 0 .3rem 1rem rgba(0, 51, 102, .08); }
+    .product-search { min-width: 260px; }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="mb-1">Entrada de estoque e compras</h1>
+        <p class="text-secondary mb-0">Importe uma NF-e ou faça o lançamento manual da compra.</p>
+    </div>
+    <a href="/Estoque/Extrato" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar ao estoque
+    </a>
+</div>
+
+<div asp-validation-summary="All" class="alert alert-danger"></div>
+
+<ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(Model.OrigemXml ? "active" : null)" data-bs-toggle="tab" data-bs-target="#xmlPane" type="button" data-origin="xml">
+            <i class="bi bi-filetype-xml me-1"></i> Importação de XML
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link @(!Model.OrigemXml ? "active" : null)" data-bs-toggle="tab" data-bs-target="#manualPane" type="button" data-origin="manual">
+            <i class="bi bi-keyboard me-1"></i> Lançamento manual
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content mb-4">
+    <div id="xmlPane" class="tab-pane fade @(Model.OrigemXml ? "show active" : null)">
+        <form action="/EntradaEstoque/UploadXml" method="post" enctype="multipart/form-data" class="card entry-card">
+            @Html.AntiForgeryToken()
+            <div class="card-body">
+                <label id="xmlDropZone" class="xml-drop-zone rounded p-5 text-center d-block" for="arquivoXml">
+                    <i class="bi bi-cloud-arrow-up display-5 text-primary"></i>
+                    <strong class="d-block mt-2">Arraste a NF-e XML para cá</strong>
+                    <span class="text-secondary">ou clique para selecionar o arquivo (máximo 10 MB)</span>
+                    <input id="arquivoXml" name="arquivoXml" type="file" accept=".xml,text/xml,application/xml" class="d-none" />
+                    <span id="xmlFileName" class="d-block text-primary mt-2"></span>
+                </label>
+            </div>
+            <div class="card-footer bg-white text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i> Ler e conferir XML
+                </button>
+            </div>
+        </form>
+        @if (Model.OrigemXml && !string.IsNullOrWhiteSpace(Model.NumeroDocumento))
+        {
+            <div class="alert alert-success mt-3 mb-0">
+                <i class="bi bi-check-circle me-1"></i>
+                XML carregado. Confira o fornecedor e vincule todos os produtos antes de confirmar.
+                @if (!string.IsNullOrWhiteSpace(Model.FornecedorXml))
+                {
+                    <strong class="d-block mt-1">@Model.FornecedorXml</strong>
+                }
+            </div>
+        }
+    </div>
+    <div id="manualPane" class="tab-pane fade @(!Model.OrigemXml ? "show active" : null)">
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            Preencha o cabeçalho, adicione os produtos recebidos e gere as parcelas do financeiro.
+        </div>
+    </div>
+</div>
+
+<form id="entradaForm" action="/EntradaEstoque/Salvar" method="post">
+    @Html.AntiForgeryToken()
+    <input asp-for="OrigemXml" type="hidden" id="origemXml" />
+    <textarea asp-for="XmlConteudo" class="d-none"></textarea>
+    <input asp-for="ChaveAcesso" type="hidden" />
+
+    <section class="card entry-card mb-4">
+        <div class="card-header bg-white py-3">
+            <h2 class="h5 mb-0"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Dados do documento</h2>
+        </div>
+        <div class="card-body row g-3">
+            <div class="col-lg-5">
+                <label asp-for="FornecedorId" class="form-label">Fornecedor</label>
+                <select asp-for="FornecedorId" class="form-select" id="FornecedorId">
+                    <option value="0">Selecione...</option>
+                    @foreach (var fornecedor in Model.Fornecedores)
+                    {
+                        <option value="@fornecedor.Id">@fornecedor.Descricao</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <label asp-for="NumeroDocumento" class="form-label">Número da nota</label>
+                <input asp-for="NumeroDocumento" class="form-control" />
+            </div>
+            <div class="col-md-2 col-lg-1">
+                <label asp-for="Serie" class="form-label">Série</label>
+                <input asp-for="Serie" class="form-control" />
+            </div>
+            <div class="col-md-6 col-lg-2">
+                <label asp-for="DataEmissao" class="form-label">Emissão</label>
+                <input asp-for="DataEmissao" type="date" class="form-control" />
+            </div>
+            <div class="col-lg-6">
+                <label asp-for="PedidoId" class="form-label">Pedido de origem (opcional)</label>
+                <select asp-for="PedidoId" class="form-select" id="PedidoId">
+                    <option value="">-- Entrada Avulsa (Nenhum) --</option>
+                    @foreach (var pedido in Model.Pedidos)
+                    {
+                        <option value="@pedido.Id">@pedido.Descricao</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-6">
+                <label asp-for="PlanoContasId" class="form-label">Plano de contas</label>
+                <select asp-for="PlanoContasId" class="form-select">
+                    <option value="0">Selecione...</option>
+                    @foreach (var plano in Model.PlanosContas)
+                    {
+                        <option value="@plano.Id">@plano.Descricao</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12">
+                <label asp-for="Observacao" class="form-label">Observação</label>
+                <textarea asp-for="Observacao" class="form-control" rows="2"></textarea>
+            </div>
+        </div>
+    </section>
+
+    <section class="card entry-card mb-4">
+        <div class="card-header bg-white py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h2 class="h5 mb-0"><i class="bi bi-box-seam me-2 text-primary"></i>Produtos recebidos</h2>
+            <button id="addItem" type="button" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg"></i> Adicionar produto
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="min-width:300px">Produto interno / de-para</th>
+                        <th style="width:110px">Quantidade</th>
+                        <th style="width:150px">Preço compra</th>
+                        <th style="width:150px">Preço custo</th>
+                        <th style="width:140px" class="text-end">Total</th>
+                        <th style="width:60px"></th>
+                    </tr>
+                </thead>
+                <tbody id="itemsBody">
+                    @for (int i = 0; i < Model.Itens.Count; i++)
+                    {
+                        var produtoSelecionado = Model.Produtos.FirstOrDefault(x => x.Id == Model.Itens[i].ProdutoId);
+                        <tr data-item-row>
+                            <td>
+                                <input data-field="ProdutoId" value="@Model.Itens[i].ProdutoId" type="hidden" class="produto-id" />
+                                <input class="form-control product-search" list="produtosList" value="@(produtoSelecionado is null ? null : $"{produtoSelecionado.Id} - {produtoSelecionado.Descricao}")" placeholder="Digite o código ou nome" />
+                                <small class="text-secondary d-block mt-1">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Itens[i].CodigoFornecedor))
+                                    {
+                                        <span>Cód. fornecedor: <strong>@Model.Itens[i].CodigoFornecedor</strong> — @Model.Itens[i].DescricaoFornecedor</span>
+                                    }
+                                </small>
+                                <input data-field="CodigoFornecedor" value="@Model.Itens[i].CodigoFornecedor" type="hidden" />
+                                <input data-field="DescricaoFornecedor" value="@Model.Itens[i].DescricaoFornecedor" type="hidden" />
+                                <input data-field="Cfop" value="@Model.Itens[i].Cfop" type="hidden" />
+                                <input data-field="Ncm" value="@Model.Itens[i].Ncm" type="hidden" />
+                            </td>
+                            <td><input data-field="Quantidade" value="@Model.Itens[i].Quantidade" type="number" min="1" step="1" class="form-control item-qty" /></td>
+                            <td><input data-field="PrecoUnitarioCompra" value="@Model.Itens[i].PrecoUnitarioCompra.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" type="number" min="0.01" step="0.01" class="form-control item-price" /></td>
+                            <td><input data-field="PrecoCustoUnitario" value="@Model.Itens[i].PrecoCustoUnitario.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" type="number" min="0.01" step="0.01" class="form-control item-cost" /></td>
+                            <td class="text-end fw-semibold item-total">@Model.Itens[i].ValorTotalItem.ToString("C")</td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-item" title="Remover"><i class="bi bi-trash"></i></button></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="4" class="text-end">Total dos produtos</th>
+                        <th id="productsTotal" class="text-end fs-5">@Model.ValorTotalProdutos.ToString("C")</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <datalist id="produtosList">
+        @foreach (var produto in Model.Produtos)
+        {
+            <option value="@produto.Id - @produto.Descricao"></option>
+        }
+    </datalist>
+
+    <section class="card entry-card mb-4">
+        <div class="card-header bg-white py-3">
+            <h2 class="h5 mb-0"><i class="bi bi-calculator me-2 text-primary"></i>Totais e financeiro</h2>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label asp-for="ValorFrete" class="form-label">Frete</label>
+                    <input asp-for="ValorFrete" type="number" min="0" step="0.01" class="form-control total-input" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ValorDesconto" class="form-label">Desconto</label>
+                    <input asp-for="ValorDesconto" type="number" min="0" step="0.01" class="form-control total-input" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="ValorTotalNota" class="form-label">Valor total da nota</label>
+                    <input asp-for="ValorTotalNota" type="number" min="0.01" step="0.01" class="form-control fw-bold" />
+                    <input asp-for="ValorTotalProdutos" type="hidden" />
+                </div>
+            </div>
+
+            <div class="row g-2 align-items-end mb-3">
+                <div class="col-sm-3">
+                    <label for="installmentCount" class="form-label">Nº de parcelas</label>
+                    <input id="installmentCount" type="number" min="1" max="120" value="1" class="form-control" />
+                </div>
+                <div class="col-sm-3">
+                    <label for="installmentInterval" class="form-label">Intervalo em dias</label>
+                    <input id="installmentInterval" type="number" min="1" max="365" value="30" class="form-control" />
+                </div>
+                <div class="col-sm-3">
+                    <label for="firstDueDate" class="form-label">Primeiro vencimento</label>
+                    <input id="firstDueDate" type="date" value="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-sm-3">
+                    <button id="generateInstallments" type="button" class="btn btn-outline-primary w-100">Gerar parcelas</button>
+                </div>
+            </div>
+
+            <div class="table-responsive border rounded">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light"><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th></th></tr></thead>
+                    <tbody id="installmentsBody">
+                        @for (int i = 0; i < Model.Parcelas.Count; i++)
+                        {
+                            <tr data-installment-row>
+                                <td class="installment-number">@(i + 1)</td>
+                                <td><input data-field="DataVencimento" value="@Model.Parcelas[i].DataVencimento.ToString("yyyy-MM-dd")" type="date" class="form-control form-control-sm" /></td>
+                                <td><input data-field="Valor" value="@Model.Parcelas[i].Valor.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)" type="number" min="0.01" step="0.01" class="form-control form-control-sm installment-value" /></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-installment"><i class="bi bi-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot><tr><th colspan="2" class="text-end">Total parcelado</th><th id="installmentsTotal">R$ 0,00</th><th></th></tr></tfoot>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <div class="d-flex justify-content-end gap-2 mb-4">
+        <a href="/Estoque/Extrato" class="btn btn-light">Cancelar</a>
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="bi bi-check-circle me-1"></i> Confirmar e processar entrada
+        </button>
+    </div>
+</form>
+
+<template id="itemTemplate">
+    <tr data-item-row>
+        <td>
+            <input data-field="ProdutoId" type="hidden" class="produto-id" value="0" />
+            <input class="form-control product-search" list="produtosList" placeholder="Digite o código ou nome" />
+            <input data-field="CodigoFornecedor" type="hidden" />
+            <input data-field="DescricaoFornecedor" type="hidden" />
+            <input data-field="Cfop" type="hidden" />
+            <input data-field="Ncm" type="hidden" />
+        </td>
+        <td><input data-field="Quantidade" type="number" min="1" step="1" value="1" class="form-control item-qty" /></td>
+        <td><input data-field="PrecoUnitarioCompra" type="number" min="0.01" step="0.01" class="form-control item-price" /></td>
+        <td><input data-field="PrecoCustoUnitario" type="number" min="0.01" step="0.01" class="form-control item-cost" /></td>
+        <td class="text-end fw-semibold item-total">R$ 0,00</td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger remove-item"><i class="bi bi-trash"></i></button></td>
+    </tr>
+</template>
+
+<template id="installmentTemplate">
+    <tr data-installment-row>
+        <td class="installment-number"></td>
+        <td><input data-field="DataVencimento" type="date" class="form-control form-control-sm" /></td>
+        <td><input data-field="Valor" type="number" min="0.01" step="0.01" class="form-control form-control-sm installment-value" /></td>
+        <td><button type="button" class="btn btn-sm btn-outline-danger remove-installment"><i class="bi bi-trash"></i></button></td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="/Pages/Shared/_ValidationScriptsPartial.cshtml" />
+    <script>
+        (() => {
+            const products = @Html.Raw(produtosJson);
+            const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+            const itemsBody = document.getElementById('itemsBody');
+            const installmentsBody = document.getElementById('installmentsBody');
+            const originInput = document.getElementById('origemXml');
+            const orderSelect = document.getElementById('PedidoId');
+            const supplierSelect = document.getElementById('FornecedorId');
+
+            const number = value => Number.parseFloat(String(value || '0').replace(',', '.')) || 0;
+            const dateIso = date => {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            function reindex() {
+                itemsBody.querySelectorAll('[data-item-row]').forEach((row, index) => {
+                    row.querySelectorAll('[data-field]').forEach(input => input.name = `Itens[${index}].${input.dataset.field}`);
+                });
+                installmentsBody.querySelectorAll('[data-installment-row]').forEach((row, index) => {
+                    row.querySelector('.installment-number').textContent = index + 1;
+                    row.querySelectorAll('[data-field]').forEach(input => input.name = `Parcelas[${index}].${input.dataset.field}`);
+                });
+            }
+
+            function recalculate() {
+                let productsTotal = 0;
+                itemsBody.querySelectorAll('[data-item-row]').forEach(row => {
+                    const total = number(row.querySelector('.item-qty').value) * number(row.querySelector('.item-price').value);
+                    productsTotal += total;
+                    row.querySelector('.item-total').textContent = currency.format(total);
+                });
+                document.getElementById('productsTotal').textContent = currency.format(productsTotal);
+                document.getElementById('ValorTotalProdutos').value = productsTotal.toFixed(2);
+
+                if (!originInput.value.toLowerCase().includes('true')) {
+                    const noteTotal = productsTotal + number(document.getElementById('ValorFrete').value) - number(document.getElementById('ValorDesconto').value);
+                    document.getElementById('ValorTotalNota').value = Math.max(0, noteTotal).toFixed(2);
+                }
+
+                const installmentsTotal = [...installmentsBody.querySelectorAll('.installment-value')]
+                    .reduce((sum, input) => sum + number(input.value), 0);
+                document.getElementById('installmentsTotal').textContent = currency.format(installmentsTotal);
+                reindex();
+            }
+
+            function bindItem(row) {
+                row.querySelectorAll('.item-qty,.item-price,.item-cost').forEach(input => input.addEventListener('input', recalculate));
+                row.querySelector('.remove-item').addEventListener('click', () => { row.remove(); recalculate(); });
+                row.querySelector('.product-search').addEventListener('change', event => {
+                    const id = Number.parseInt(event.target.value, 10);
+                    const product = products.find(item => item.id === id);
+                    row.querySelector('.produto-id').value = product?.id ?? 0;
+                    if (product) {
+                        event.target.value = `${product.id} - ${product.descricao}`;
+                        if (!number(row.querySelector('.item-price').value)) row.querySelector('.item-price').value = product.precoCompra.toFixed(2);
+                        if (!number(row.querySelector('.item-cost').value)) row.querySelector('.item-cost').value = product.precoCusto.toFixed(2);
+                    }
+                    recalculate();
+                });
+            }
+
+            function bindInstallment(row) {
+                row.querySelector('.installment-value').addEventListener('input', recalculate);
+                row.querySelector('.remove-installment').addEventListener('click', () => { row.remove(); recalculate(); });
+            }
+
+            function addOrderItem(item) {
+                const row = document.getElementById('itemTemplate').content.firstElementChild.cloneNode(true);
+                const product = products.find(productItem => productItem.id === item.produtoId);
+                row.querySelector('.produto-id').value = item.produtoId;
+                row.querySelector('.product-search').value = product
+                    ? `${product.id} - ${product.descricao}`
+                    : `${item.produtoId} - ${item.descricao}`;
+                row.querySelector('[data-field="CodigoFornecedor"]').value = item.codigo ?? '';
+                row.querySelector('[data-field="DescricaoFornecedor"]').value = item.descricao ?? '';
+                row.querySelector('.item-qty').value = item.quantidade;
+                row.querySelector('.item-price').value = number(item.valorUnitario).toFixed(2);
+                row.querySelector('.item-cost').value = number(item.valorUnitario).toFixed(2);
+                itemsBody.appendChild(row);
+                bindItem(row);
+            }
+
+            orderSelect.addEventListener('change', async () => {
+                const orderId = Number.parseInt(orderSelect.value, 10) || 0;
+                itemsBody.innerHTML = '';
+
+                if (!orderId) {
+                    document.getElementById('addItem').click();
+                    recalculate();
+                    return;
+                }
+
+                orderSelect.disabled = true;
+                try {
+                    const response = await fetch(`/EntradaEstoque/PedidoOrigem/${orderId}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) throw new Error('Não foi possível carregar o pedido selecionado.');
+
+                    const order = await response.json();
+                    supplierSelect.value = String(order.fornecedorId);
+                    order.itens.forEach(addOrderItem);
+                    if (!order.itens.length) document.getElementById('addItem').click();
+                    recalculate();
+                } catch (error) {
+                    orderSelect.value = '';
+                    document.getElementById('addItem').click();
+                    recalculate();
+                    window.alert(error.message);
+                } finally {
+                    orderSelect.disabled = false;
+                }
+            });
+
+            document.querySelectorAll('[data-item-row]').forEach(bindItem);
+            document.querySelectorAll('[data-installment-row]').forEach(bindInstallment);
+
+            document.getElementById('addItem').addEventListener('click', () => {
+                const row = document.getElementById('itemTemplate').content.firstElementChild.cloneNode(true);
+                itemsBody.appendChild(row);
+                bindItem(row);
+                reindex();
+                row.querySelector('.product-search').focus();
+            });
+
+            document.getElementById('generateInstallments').addEventListener('click', () => {
+                const count = Math.max(1, Number.parseInt(document.getElementById('installmentCount').value, 10) || 1);
+                const interval = Math.max(1, Number.parseInt(document.getElementById('installmentInterval').value, 10) || 30);
+                const firstDate = new Date(`${document.getElementById('firstDueDate').value}T12:00:00`);
+                const totalCents = Math.round(number(document.getElementById('ValorTotalNota').value) * 100);
+                const baseCents = Math.floor(totalCents / count);
+                installmentsBody.innerHTML = '';
+
+                for (let index = 0; index < count; index++) {
+                    const row = document.getElementById('installmentTemplate').content.firstElementChild.cloneNode(true);
+                    const dueDate = new Date(firstDate);
+                    dueDate.setDate(dueDate.getDate() + index * interval);
+                    row.querySelector('[data-field="DataVencimento"]').value = dateIso(dueDate);
+                    row.querySelector('.installment-value').value = ((baseCents + (index === count - 1 ? totalCents - baseCents * count : 0)) / 100).toFixed(2);
+                    installmentsBody.appendChild(row);
+                    bindInstallment(row);
+                }
+                recalculate();
+            });
+
+            document.querySelectorAll('.total-input').forEach(input => input.addEventListener('input', recalculate));
+            document.querySelectorAll('[data-origin]').forEach(tab => tab.addEventListener('shown.bs.tab', () => {
+                originInput.value = tab.dataset.origin === 'xml' ? 'true' : 'false';
+                recalculate();
+            }));
+
+            const dropZone = document.getElementById('xmlDropZone');
+            const xmlInput = document.getElementById('arquivoXml');
+            const fileName = document.getElementById('xmlFileName');
+            ['dragenter', 'dragover'].forEach(name => dropZone.addEventListener(name, event => {
+                event.preventDefault();
+                dropZone.classList.add('dragging');
+            }));
+            ['dragleave', 'drop'].forEach(name => dropZone.addEventListener(name, event => {
+                event.preventDefault();
+                dropZone.classList.remove('dragging');
+            }));
+            dropZone.addEventListener('drop', event => {
+                if (event.dataTransfer.files.length) {
+                    xmlInput.files = event.dataTransfer.files;
+                    fileName.textContent = event.dataTransfer.files[0].name;
+                }
+            });
+            xmlInput.addEventListener('change', () => fileName.textContent = xmlInput.files[0]?.name ?? '');
+
+            if (!itemsBody.children.length) document.getElementById('addItem').click();
+            recalculate();
+            document.getElementById('entradaForm').addEventListener('submit', reindex);
+        })();
+    </script>
+}

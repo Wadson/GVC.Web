@@ -1,0 +1,44 @@
+@page
+@model GVC.Web.Pages.Configuracoes.Empresa.IndexModel
+@{ViewData["Title"]="Empresa";}
+<div class="d-flex justify-content-between align-items-center gap-2">
+    <h1>
+        @Model.Item.NomeFantasia
+    </h1>
+    <div class="d-flex gap-2">
+        <a asp-page="Create" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Nova empresa
+        </a>
+        <a asp-page="Edit" class="btn btn-primary">
+            Editar
+        </a>
+    </div>
+</div>
+<div class="card card-body mt-3">
+    <dl class="row mb-0">
+        <dt class="col-sm-3">
+            Razão social
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Item.RazaoSocial
+        </dd>
+        <dt class="col-sm-3">
+            CNPJ
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Item.Cnpj
+        </dd>
+        <dt class="col-sm-3">
+            E-mail
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Item.Email
+        </dd>
+        <dt class="col-sm-3">
+            Telefone
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Item.Telefone
+        </dd>
+    </dl>
+</div>

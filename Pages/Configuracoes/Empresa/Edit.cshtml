@@ -1,0 +1,180 @@
+@page
+@model GVC.Web.Pages.Configuracoes.Empresa.EditModel
+@{ViewData["Title"]="Alterar empresa";}
+<h1>
+    Alterar empresa
+</h1>
+<form method="post" enctype="multipart/form-data" class="card">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="All" class="text-danger">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Razão social
+            </label>
+            <input asp-for="Item.RazaoSocial" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Nome fantasia
+            </label>
+            <input asp-for="Item.NomeFantasia" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                CNPJ
+            </label>
+            <input asp-for="Item.Cnpj" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Inscrição estadual
+            </label>
+            <input asp-for="Item.InscricaoEstadual" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Inscrição municipal
+            </label>
+            <input asp-for="Item.InscricaoMunicipal" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                CNAE
+            </label>
+            <input asp-for="Item.Cnae" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Ambiente SEFAZ
+            </label>
+            <select asp-for="Item.AmbienteSefaz" class="form-select">
+                <option value="1">
+                    Produção
+                </option>
+                <option value="2">
+                    Homologação
+                </option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Regime tributário
+            </label>
+            <select asp-for="Item.RegimeTributario" class="form-select">
+                <option value="1">
+                    Simples Nacional
+                </option>
+                <option value="2">
+                    Simples - excesso
+                </option>
+                <option value="3">
+                    Regime normal
+                </option>
+            </select>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Certificado digital (caminho)
+            </label>
+            <input asp-for="Item.CertificadoDigital" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Nova senha do certificado
+            </label>
+            <input asp-for="Item.CertificadoSenha" type="password" value="" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                CEP
+            </label>
+            <input asp-for="Item.Cep" class="form-control">
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">
+                Logradouro
+            </label>
+            <input asp-for="Item.Logradouro" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                Número
+            </label>
+            <input asp-for="Item.Numero" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Bairro
+            </label>
+            <input asp-for="Item.Bairro" class="form-control">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Cidade
+            </label>
+            <div class="position-relative">
+                <input class="form-control" data-city-search data-city-target="Item_CidadeId" value="@Model.CidadeNome" placeholder="Digite o nome da cidade">
+                <input asp-for="Item.CidadeId" type="hidden">
+                <div data-city-results class="list-group position-absolute w-100 shadow" style="z-index:1050">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Telefone
+            </label>
+            <input asp-for="Item.Telefone" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                E-mail
+            </label>
+            <input asp-for="Item.Email" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Site
+            </label>
+            <input asp-for="Item.Site" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">
+                Responsável
+            </label>
+            <input asp-for="Item.Responsavel" class="form-control">
+        </div>
+        <div class="col-12">
+            <hr class="my-1">
+        </div>
+        <div class="col-md-6">
+            <label asp-for="LogoArquivo" class="form-label">Logo da empresa</label>
+            <input asp-for="LogoArquivo" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" data-image-input data-image-preview="logoPreview">
+            <div class="form-text">JPG, PNG ou WEBP, com no máximo 5 MB. Deixe vazio para manter a atual.</div>
+            <span asp-validation-for="LogoArquivo" class="text-danger"></span>
+            <img id="logoPreview" src="@(Model.Item.Logo is null ? null : GVC.Web.Services.CompanyImageStorage.GetDataUrl(Model.Item.Logo))" class="img-thumbnail mt-2 @(Model.Item.Logo is null ? "d-none" : null)" style="max-height:160px;max-width:100%" alt="Logo atual">
+        </div>
+        <div class="col-md-6">
+            <label asp-for="FundoTelaArquivo" class="form-label">Imagem de fundo da tela</label>
+            <input asp-for="FundoTelaArquivo" type="file" accept="image/jpeg,image/png,image/webp" class="form-control" data-image-input data-image-preview="fundoPreview">
+            <div class="form-text">JPG, PNG ou WEBP, com no máximo 10 MB. Deixe vazio para manter a atual.</div>
+            <span asp-validation-for="FundoTelaArquivo" class="text-danger"></span>
+            <img id="fundoPreview" src="@(Model.Item.FundoTelaImagem is null ? null : GVC.Web.Services.CompanyImageStorage.GetDataUrl(Model.Item.FundoTelaImagem))" class="img-thumbnail mt-2 @(Model.Item.FundoTelaImagem is null ? "d-none" : null)" style="max-height:160px;max-width:100%" alt="Imagem de fundo atual">
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-page="Index" class="btn btn-light">
+            Cancelar
+        </a>
+        <button class="btn btn-primary">
+            Salvar alterações
+        </button>
+    </div>
+</form>
+@section Scripts{
+<partial name="_ValidationScriptsPartial"/>
+<script>
+    window.gvcCitySearch?.();
+    window.gvcImagePreview?.();
+</script>
+}

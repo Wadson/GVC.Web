@@ -1,0 +1,429 @@
+================================================================================
+GVC ERP WEB - DOCUMENTAÇÃO DA ESTRUTURA DO SISTEMA
+================================================================================
+
+Data do levantamento: 19/07/2026
+Projeto: GVC.Web
+Diretório: D:\Projetos\GVC.Web
+
+Este documento descreve a estrutura encontrada no código-fonte do projeto.
+Artefatos gerados (bin, obj), metadados da IDE (.vs), dependências de terceiros
+em wwwroot/lib e conteúdo interno do Git não foram detalhados arquivo a arquivo.
+Valores sensíveis de configuração também não são reproduzidos.
+
+
+1. VISÃO GERAL
+================================================================================
+
+Tipo de aplicação .......... ASP.NET Core Razor Pages
+Framework .................. .NET 8 (net8.0)
+Linguagem .................. C# com nullable reference types habilitado
+Persistência ............... Entity Framework Core 8.0.19
+Banco de dados ............. SQL Server
+Autenticação ............... Cookie Authentication
+Interface .................. Razor/HTML, Bootstrap, JavaScript e CSS
+Localização padrão ......... pt-BR
+Projeto/Solução ............ GVC.Web.csproj / GVC.Web.slnx
+
+A aplicação é um ERP web monolítico, dividido funcionalmente em cadastros,
+vendas/PDV, estoque, caixa, financeiro, fiscal, relatórios, usuários e
+configurações. A interface e os endpoints HTTP são implementados com Razor
+Pages. O acesso aos dados é feito por um único ErpDbContext.
+
+
+2. ÁRVORE PRINCIPAL DO PROJETO
+================================================================================
+
+GVC.Web/
+|-- Data/
+|   `-- ErpDbContext.cs
+|-- Extensions/
+|   `-- ServiceExtensions.cs
+|-- Models/
+|   |-- BoletoBancario.cs
+|   |-- Caixa.cs
+|   |-- CaixaMovimento.cs
+|   |-- Categoria.cs
+|   |-- Cidade.cs
+|   |-- Cliente.cs
+|   |-- ConfiguracaoPix.cs
+|   |-- ContaAPagar.cs
+|   |-- Empresa.cs
+|   |-- Estado.cs
+|   |-- FiscalDocumento.cs
+|   |-- FormaPagamento.cs
+|   |-- Fornecedor.cs
+|   |-- ItemPedido.cs
+|   |-- ItemVenda.cs
+|   |-- Marca.cs
+|   |-- MovimentacaoEstoque.cs
+|   |-- PagamentoComissaoVendedor.cs
+|   |-- PagamentoParcial.cs
+|   |-- Parcela.cs
+|   |-- Pedido.cs
+|   |-- PlanoContas.cs
+|   |-- Produto.cs
+|   |-- Promocao.cs
+|   |-- TokenRedefinicao.cs
+|   |-- Usuario.cs
+|   |-- Venda.cs
+|   `-- Vendedor.cs
+|-- Pages/
+|   |-- Account/
+|   |   |-- AccessDenied.cshtml
+|   |   |-- ForgotPassword.cshtml[.cs]
+|   |   |-- Login.cshtml[.cs]
+|   |   |-- Logout.cshtml[.cs]
+|   |   |-- ResetPassword.cshtml[.cs]
+|   |   `-- SwitchCompany.cshtml[.cs]
+|   |-- Caixa/Index.cshtml[.cs]
+|   |-- Cidades/Buscar.cshtml[.cs]
+|   |-- Clientes/{Index,Create,Edit}.cshtml[.cs]
+|   |-- Configuracoes/
+|   |   |-- Empresa/{Index,Edit}.cshtml[.cs]
+|   |   `-- FormasPagamento/{Index,Create,Edit}.cshtml[.cs]
+|   |-- Dashboard/Index.cshtml[.cs]
+|   |-- Estoque/{AjusteManual,Extrato}.cshtml[.cs]
+|   |-- Financeiro/
+|   |   |-- ContasPagar/Index.cshtml[.cs]
+|   |   `-- Recebiveis/{Index,Pagamentos,Receber}.cshtml[.cs]
+|   |-- Fiscal/NotasFiscais/Index.cshtml[.cs]
+|   |-- Fornecedores/{Index,Create,Edit}.cshtml[.cs]
+|   |-- Produtos/{Index,Create,Edit}.cshtml[.cs]
+|   |-- Relatorios/Vendas.cshtml[.cs]
+|   |-- Shared/
+|   |   |-- _Layout.cshtml
+|   |   |-- _Layout.cshtml.css
+|   |   `-- _ValidationScriptsPartial.cshtml
+|   |-- Usuarios/{Index,Create,Edit}.cshtml[.cs]
+|   |-- Vendas/{Index,Details,PDV}.cshtml[.cs]
+|   |-- Vendedores/{Index,Create,Edit}.cshtml[.cs]
+|   |-- BasePageModel.cs
+|   |-- Error.cshtml[.cs]
+|   |-- Index.cshtml[.cs]
+|   |-- Privacy.cshtml[.cs]
+|   |-- _ViewImports.cshtml
+|   `-- _ViewStart.cshtml
+|-- Properties/launchSettings.json
+|-- Services/
+|   |-- EmailService.cs / IEmailService.cs
+|   |-- Pbkdf2PasswordHasher.cs / IPasswordHasher.cs
+|   |-- ProductImageStorage.cs
+|   `-- VendaService.cs / IVendaService.cs
+|-- wwwroot/
+|   |-- css/{erp.css,site.css}
+|   |-- js/{pdv.js,site.js}
+|   |-- lib/ (Bootstrap, jQuery e validação)
+|   |-- uploads/produtos/ (imagens enviadas)
+|   `-- favicon.ico
+|-- appsettings.json
+|-- appsettings.Development.json
+|-- GVC.Web.csproj
+|-- GVC.Web.csproj.user
+|-- GVC.Web.slnx
+|-- Program.cs
+`-- scaffold-erp.ps1
+
+Convenção "arquivo.cshtml[.cs]": existe uma view .cshtml e seu PageModel
+correspondente em .cshtml.cs.
+
+
+3. INICIALIZAÇÃO E PIPELINE HTTP
+================================================================================
+
+Program.cs
+
+- Lê a connection string "ErpConnection".
+- Registra ErpDbContext com o provedor SQL Server.
+- Registra IPasswordHasher, IVendaService e IEmailService com ciclo Scoped.
+- Configura autenticação por cookie com duração de 8 horas e renovação móvel.
+- Define /Account/Login, /Account/Logout e /Account/AccessDenied.
+- Cria a política "Administradores", baseada no papel "Administrador".
+- Exige autenticação em todas as páginas.
+- Restringe /Usuarios e /Configuracoes à política Administradores.
+- Permite acesso anônimo ao login, recuperação/redefinição de senha e acesso
+  negado.
+- Configura cultura pt-BR.
+- Habilita tratamento de erros/HSTS fora de desenvolvimento, HTTPS, arquivos
+  estáticos, roteamento, autenticação, autorização e Razor Pages.
+
+BasePageModel.cs
+
+- Classe-base das páginas autenticadas.
+- Expõe EmpresaId, UsuarioId e TipoUsuario a partir das claims do usuário.
+- Lança erro quando claims numéricas obrigatórias não estão presentes.
+- É o principal mecanismo de escopo multiempresa nas consultas das páginas.
+
+
+4. CAMADA DE DADOS
+================================================================================
+
+ErpDbContext contém 28 DbSets:
+
+- Cadastros geográficos: Estados, Cidades.
+- Empresa e segurança: Empresas, ConfiguracoesPix, Usuarios,
+  TokensRedefinicao.
+- Pessoas: Clientes, Fornecedores, Vendedores.
+- Catálogo: Marcas, Categorias, Produtos, Promocoes.
+- Estoque e compras: MovimentacoesEstoque, Pedidos, ItensPedido.
+- Pagamentos e caixa: FormasPagamento, Caixas, CaixaMovimentos.
+- Vendas e fiscal: Vendas, ItensVenda, DocumentosFiscais.
+- Financeiro: Parcelas, PagamentosParciais, BoletosBancarios, PlanosContas,
+  ContasAPagar, PagamentosComissao.
+
+Mapeamento relacional
+
+- As entidades usam Data Annotations para tabela, chave, tamanho, nulabilidade
+  e tipos SQL, complementadas pelo Fluent API em OnModelCreating.
+- A maioria das relações usa DeleteBehavior.Restrict.
+- ItemVenda -> Venda usa exclusão em cascata.
+- Há índice único em Usuario (EmpresaId, NomeUsuario).
+- Há índice em Produto (EmpresaId, GtinEan).
+- EmpresaId aparece nas principais entidades transacionais/cadastrais para
+  segregação dos dados por empresa.
+- Não há pasta Migrations no código levantado; o esquema é tratado como banco
+  já existente ou mantido externamente.
+
+
+5. MODELO DE DOMÍNIO
+================================================================================
+
+Empresa e acesso
+
+- Empresa: dados cadastrais, fiscais, endereço, contato, logo, imagem de fundo
+  e auditoria; vinculada a Cidade.
+- Usuario: perfil, dados pessoais, credenciais, tipo/papel e Empresa.
+- TokenRedefinicao: token e expiração para redefinição de senha de Usuario.
+- ConfiguracaoPix: chave PIX, beneficiário e cidade por Empresa.
+
+Pessoas e localização
+
+- Estado: UF e códigos geográficos; possui coleção de Cidades.
+- Cidade: nome, Estado e código IBGE.
+- Cliente: pessoa física/jurídica, contato, endereço, crédito, status,
+  histórico e Empresa.
+- Fornecedor: identificação, contato, endereço, observações e Empresa.
+- Vendedor: dados pessoais, contratação, comissão, endereço, status e Empresa.
+
+Produtos, compras e estoque
+
+- Categoria e Marca: classificações de Produto por Empresa.
+- Produto: identificação, preços, estoque, validade, GTIN/EAN, imagem,
+  fornecedor, marca, categoria e dados fiscais (NCM, CEST, CFOP, CSOSN/CST e
+  alíquotas).
+- Promocao: preço original/promocional, período e situação do Produto.
+- Pedido: compra de Fornecedor, data, valor, status, Empresa e itens.
+- ItemPedido: Produto, quantidade e custo unitário do Pedido.
+- MovimentacaoEstoque: entrada/saída, estoques anterior/atual, origem,
+  documento, usuário, preços e fornecedor.
+
+Vendas e recebimentos
+
+- Venda: Cliente, forma de pagamento, vendedor, data, status, totais bruto,
+  desconto/líquido, Empresa e coleção de itens.
+- ItemVenda: Produto, quantidade, preço unitário, desconto e Empresa.
+- Parcela: Venda, número, vencimento, valor, valor recebido, status, pagamento,
+  juros, multa, observação e Empresa.
+- PagamentoParcial: recebimento vinculado à Parcela, forma, data e Empresa.
+- BoletoBancario: dados bancários e de cobrança vinculados à Parcela.
+
+Caixa, financeiro e fiscal
+
+- FormaPagamento: nome e indicador de atividade.
+- Caixa: abertura/fechamento, saldos, usuários responsáveis, status e Empresa.
+- CaixaMovimento: entrada/saída, valor, forma, histórico, origem, referência,
+  usuário e Empresa.
+- PlanoContas: código, descrição e tipo por Empresa.
+- ContaAPagar: fornecedor/pedido/plano, documento, datas, valores, status,
+  forma de pagamento e Empresa.
+- PagamentoComissaoVendedor: período, totais, percentual, valor, status,
+  vendedor, usuário e Empresa.
+- FiscalDocumento: nota vinculada à Venda, chave, número, série, modelo,
+  situação SEFAZ, XMLs e Empresa.
+
+Observação: os status são armazenados atualmente como strings nas entidades;
+não foram encontrados enums C# específicos para eles.
+
+
+6. SERVIÇOS E REGRAS TRANSVERSAIS
+================================================================================
+
+VendaService / IVendaService
+
+- Recebe cliente, vendedor, forma de pagamento, desconto, itens e parcelas.
+- Valida cliente, vendedor, forma, caixa aberto, produtos, estoque, quantidade,
+  parcelas e igualdade entre o total das parcelas e o total líquido.
+- Executa a finalização em transação Serializable.
+- Calcula totais e descontos da venda.
+- Baixa o estoque e cria movimentações de saída.
+- Persiste venda, itens e parcelas.
+- Quando o recebimento é imediato, registra as parcelas como pagas e cria o
+  movimento correspondente no caixa.
+
+Pbkdf2PasswordHasher / IPasswordHasher
+
+- Gera hashes PBKDF2-SHA256 com salt aleatório, 210.000 iterações e chave de
+  32 bytes.
+- Compara hashes em tempo constante.
+- Aceita temporariamente hashes SHA-256 legados e indica necessidade de rehash.
+
+EmailService / IEmailService
+
+- Envia mensagens HTML por SMTP.
+- Lê host, porta, SSL, remetente e credenciais da seção Email da configuração.
+- É usado pelo fluxo de recuperação de senha.
+
+ProductImageStorage
+
+- Valida uploads JPG, JPEG, PNG, WEBP ou GIF de até 5 MB.
+- Salva imagens com nome GUID em wwwroot/uploads/produtos.
+
+ServiceExtensions
+
+- Fornece OnlyDigits para normalização de CPF, CNPJ, CEP e campos semelhantes.
+
+
+7. MÓDULOS E ROTAS RAZOR PAGES
+================================================================================
+
+Raiz e painel
+
+- /: página inicial de encaminhamento/entrada.
+- /Dashboard: indicadores consolidados do ERP.
+- /Privacy: página institucional de privacidade.
+- /Error: tratamento visual de erros.
+
+Conta e autenticação
+
+- /Account/Login: autentica usuário, cria claims e fornece logo da empresa.
+- /Account/Logout: encerra a sessão.
+- /Account/ForgotPassword: solicita recuperação e envia e-mail.
+- /Account/ResetPassword: valida token e altera a senha.
+- /Account/SwitchCompany: troca o contexto de empresa na sessão autenticada.
+- /Account/AccessDenied: informa falta de autorização.
+
+Cadastros
+
+- /Clientes: lista, pesquisa e exclui; /Create e /Edit mantêm clientes.
+- /Fornecedores: lista, pesquisa e exclui; /Create e /Edit mantêm fornecedores.
+- /Vendedores: lista, pesquisa e exclui; /Create e /Edit mantêm vendedores.
+- /Produtos: lista, pesquisa e exclui; /Create e /Edit mantêm produtos e imagem.
+- /Cidades/Buscar: endpoint de busca de cidades usado pelos formulários.
+- /Usuarios: lista e exclui; /Create e /Edit mantêm usuários. Módulo restrito
+  a administradores.
+
+Vendas
+
+- /Vendas: listagem e filtros de vendas.
+- /Vendas/Details: detalhes da venda e seus itens.
+- /Vendas/PDV: ponto de venda; pesquisa clientes, produtos e vendedores por
+  handlers GET e finaliza a venda por handler POST.
+- wwwroot/js/pdv.js implementa a interação do carrinho, totais e parcelas.
+
+Estoque
+
+- /Estoque/Extrato: consulta movimentações de estoque.
+- /Estoque/AjusteManual: registra ajuste manual e atualiza saldo do Produto.
+
+Caixa
+
+- /Caixa: consulta situação/movimentos, abre e fecha o caixa.
+
+Financeiro
+
+- /Financeiro/ContasPagar: consulta e filtra obrigações a pagar.
+- /Financeiro/Recebiveis: lista parcelas, totaliza valores e filtra contas a
+  receber. A seleção inicial configurada no código é Pendente, Atrasada e
+  ParcialmentePago; Pago permanece disponível no filtro quando existir nos
+  dados.
+- /Financeiro/Recebiveis/Receber: registra recebimento total ou parcial.
+- /Financeiro/Recebiveis/Pagamentos: mostra histórico e permite estorno.
+
+Fiscal e relatórios
+
+- /Fiscal/NotasFiscais: consulta documentos fiscais/notas.
+- /Relatorios/Vendas: relatório de vendas com filtros e totalizadores.
+
+Configurações (restritas a administradores)
+
+- /Configuracoes/Empresa: lista e edita empresas.
+- /Configuracoes/FormasPagamento: lista, cria, edita e exclui formas.
+
+
+8. INTERFACE E ARQUIVOS ESTÁTICOS
+================================================================================
+
+- Pages/Shared/_Layout.cshtml: estrutura visual comum, navegação e menus.
+- Pages/Shared/_ValidationScriptsPartial.cshtml: validação client-side.
+- Pages/_ViewImports.cshtml: imports e Tag Helpers compartilhados.
+- Pages/_ViewStart.cshtml: definição do layout padrão.
+- wwwroot/css/erp.css: estilos específicos do ERP.
+- wwwroot/css/site.css: estilos gerais do site.
+- wwwroot/js/site.js: comportamentos comuns da interface.
+- wwwroot/js/pdv.js: lógica client-side do ponto de venda.
+- wwwroot/lib: Bootstrap, jQuery, jQuery Validation e Unobtrusive Validation.
+- wwwroot/uploads/produtos: armazenamento público das imagens de produtos.
+
+
+9. CONFIGURAÇÃO E DEPENDÊNCIAS
+================================================================================
+
+Pacotes NuGet diretos
+
+- Microsoft.EntityFrameworkCore.SqlServer 8.0.19
+- Microsoft.EntityFrameworkCore.Design 8.0.19 (PrivateAssets=all)
+
+Arquivos de configuração
+
+- appsettings.json: connection string, logging, hosts e configurações de e-mail.
+- appsettings.Development.json: sobreposições do ambiente de desenvolvimento.
+- Properties/launchSettings.json: perfis locais de execução.
+- GVC.Web.csproj.user: preferências locais da IDE/usuário.
+- scaffold-erp.ps1: script auxiliar de scaffolding/criação inicial do projeto.
+
+
+10. FLUXOS PRINCIPAIS
+================================================================================
+
+Autenticação
+
+Login -> valida Usuario/senha -> cria cookie e claims -> define EmpresaID e
+UsuarioID -> páginas usam BasePageModel -> consultas filtram por EmpresaId.
+
+Venda/PDV
+
+Pesquisa de catálogo -> carrinho -> cliente/vendedor/forma -> geração de
+parcelas -> VendaService -> transação SQL -> Venda/Itens -> baixa de estoque ->
+MovimentacoesEstoque -> Parcelas -> eventual entrada no Caixa.
+
+Conta a receber
+
+Venda gera Parcela -> listagem de Recebiveis -> recebimento gera
+PagamentoParcial -> atualiza ValorRecebido/Status/DataPagamento -> histórico
+permite consulta e estorno.
+
+Estoque
+
+Produto mantém saldo atual -> venda registra SAIDA -> ajuste manual registra
+movimentação -> extrato apresenta o histórico.
+
+
+11. CONVENÇÕES E OBSERVAÇÕES TÉCNICAS
+================================================================================
+
+- Namespace raiz: GVC.Web.
+- Nullable e implicit usings estão habilitados.
+- Os PageModels usam injeção de dependência por construtor primário.
+- Consultas de leitura normalmente usam AsNoTracking.
+- A segregação multiempresa depende de aplicar EmpresaId em cada consulta.
+- Valores monetários são mapeados predominantemente como decimal(18,2).
+- Datas sem horário são mapeadas predominantemente como date.
+- Validações usam Data Annotations, ModelState e regras nos PageModels/serviços.
+- Não foram encontrados projetos automatizados de teste na solução.
+- Não foram encontrados Controllers ou APIs separadas; handlers Razor Pages
+  atendem também às buscas assíncronas usadas pela interface.
+- Não há migrations EF Core versionadas na estrutura levantada.
+
+================================================================================
+FIM DO DOCUMENTO
+================================================================================

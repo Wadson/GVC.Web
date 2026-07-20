@@ -1,0 +1,23 @@
+@page
+@model GVC.Web.Pages.Configuracoes.FormasPagamento.CreateModel
+@{ViewData["Title"]="Nova forma de pagamento";}
+<h1>
+    Nova forma de pagamento
+</h1>
+<form method="post" class="card">
+    <div class="card-body">
+        <label asp-for="Item.NomeFormaPagamento" class="form-label">
+        </label>
+        <input asp-for="Item.NomeFormaPagamento" class="form-control">
+        <div class="form-check mt-3">
+            <input asp-for="Item.Ativo" class="form-check-input">
+            <label asp-for="Item.Ativo" class="form-check-label">
+            </label>
+        </div>
+    </div>
+    <div class="card-footer">
+        <button class="btn btn-primary">
+            Salvar
+        </button>
+    </div>
+</form>

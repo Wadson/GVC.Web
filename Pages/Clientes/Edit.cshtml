@@ -1,0 +1,155 @@
+@page "{id:int}"
+@model GVC.Web.Pages.Clientes.EditModel
+@{ViewData["Title"]="Alterar cliente";}
+<h1>
+    Alterar cliente
+</h1>
+<form method="post" class="card">
+    <input asp-for="Cliente.ClienteId" type="hidden">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="All" class="text-danger">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Tipo
+            </label>
+            <select asp-for="Cliente.TipoCliente" class="form-select" id="tipoPessoa">
+                <option value="PF">
+                    Pessoa física
+                </option>
+                <option value="PJ">
+                    Pessoa jurídica
+                </option>
+            </select>
+        </div>
+        <div class="col-md-9">
+            <label class="form-label">
+                Nome / Razão social
+            </label>
+            <input asp-for="Cliente.Nome" class="form-control">
+        </div>
+        <div class="col-md-4 pf-field">
+            <label class="form-label">
+                CPF
+            </label>
+            <input asp-for="Cliente.Cpf" class="form-control document-mask">
+        </div>
+        <div class="col-md-4 pf-field">
+            <label class="form-label">
+                RG
+            </label>
+            <input asp-for="Cliente.Rg" class="form-control">
+        </div>
+        <div class="col-md-4 pf-field">
+            <label class="form-label">
+                Órgão expedidor
+            </label>
+            <input asp-for="Cliente.OrgaoExpedidorRg" class="form-control">
+        </div>
+        <div class="col-md-4 pf-field">
+            <label class="form-label">
+                Nascimento
+            </label>
+            <input asp-for="Cliente.DataNascimento" type="date" class="form-control">
+        </div>
+        <div class="col-md-4 pj-field">
+            <label class="form-label">
+                CNPJ
+            </label>
+            <input asp-for="Cliente.Cnpj" class="form-control document-mask">
+        </div>
+        <div class="col-md-4 pj-field">
+            <label class="form-label">
+                Inscrição estadual
+            </label>
+            <input asp-for="Cliente.Ie" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Telefone
+            </label>
+            <input asp-for="Cliente.Telefone" class="form-control">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                E-mail
+            </label>
+            <input asp-for="Cliente.Email" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                CEP
+            </label>
+            <input asp-for="Cliente.Cep" class="form-control">
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">
+                Logradouro
+            </label>
+            <input asp-for="Cliente.Logradouro" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                Número
+            </label>
+            <input asp-for="Cliente.Numero" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Bairro
+            </label>
+            <input asp-for="Cliente.Bairro" class="form-control">
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">
+                Cidade
+            </label>
+            <div class="position-relative">
+                <input class="form-control" data-city-search data-city-target="Cliente_CidadeId" value="@Model.CidadeNome" placeholder="Digite o nome da cidade" autocomplete="off">
+                <input asp-for="Cliente.CidadeId" type="hidden">
+                <div data-city-results class="list-group position-absolute w-100 shadow" style="z-index:1050">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Limite de crédito
+            </label>
+            <input asp-for="Cliente.LimiteCredito" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                Status
+            </label>
+            <select asp-for="Cliente.Status" class="form-select">
+                <option value="1">
+                    Ativo
+                </option>
+                <option value="0">
+                    Inativo
+                </option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label">
+                Observações
+            </label>
+            <textarea asp-for="Cliente.Observacoes" class="form-control">
+            </textarea>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-page="Index" class="btn btn-light">
+            Cancelar
+        </a>
+        <button class="btn btn-primary">
+            Salvar alterações
+        </button>
+    </div>
+</form>
+@section Scripts{
+<partial name="_ValidationScriptsPartial"/>
+<script>
+    window.gvcClienteForm?.();window.gvcCitySearch?.();
+</script>
+}

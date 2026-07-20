@@ -1,0 +1,55 @@
+@page
+@model GVC.Web.Pages.Financeiro.ContasPagar.IndexModel
+@{ViewData["Title"]="Contas a pagar";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Contas a pagar
+    </h1>
+    <a asp-page="Create" class="btn btn-primary">
+        Novo lançamento
+    </a>
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Descrição
+                </th>
+                <th>
+                    Fornecedor
+                </th>
+                <th>
+                    Vencimento
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Valor
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Itens){
+            <tr>
+                <td>
+                    @x.Descricao
+                </td>
+                <td>
+                    @x.Fornecedor?.Nome
+                </td>
+                <td>
+                    @x.DataVencimento.ToString("d")
+                </td>
+                <td>
+                    @x.Status
+                </td>
+                <td class="text-end">
+                    @x.Valor.ToString("C")
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

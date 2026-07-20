@@ -1,0 +1,89 @@
+@page
+@model GVC.Web.Pages.Produtos.IndexModel
+@{ViewData["Title"]="Produtos";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Produtos
+    </h1>
+    <a asp-page="Create" class="btn btn-primary">
+        Novo produto
+    </a>
+</div>
+<form method="get" class="card card-body mb-3">
+    <div class="input-group">
+        <input asp-for="Pesquisa" class="form-control" placeholder="Pesquisar por nome, referência ou código" autocomplete="off">
+        <button class="btn btn-primary" type="submit">
+            <i class="bi bi-search">
+            </i>
+            Pesquisar
+        </button>
+        @if(!string.IsNullOrWhiteSpace(Model.Pesquisa)){
+        <a asp-page="Index" class="btn btn-outline-secondary">
+            Limpar
+        </a>
+        }
+    </div>
+</form>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Foto
+                </th>
+                <th>
+                    Produto
+                </th>
+                <th>
+                    EAN
+                </th>
+                <th class="text-end">
+                    Preço
+                </th>
+                <th class="text-end">
+                    Estoque
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Ações
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Produtos){
+            <tr>
+                <td>
+                    <img src="@(string.IsNullOrWhiteSpace(x.Imagem) ? "/images/no-product.svg" : x.Imagem)" onerror="this.onerror=null;this.src='/images/no-product.svg'" alt="@x.NomeProduto" class="rounded border" style="width:40px;height:40px;object-fit:cover">
+                </td>
+                <td>
+                    @x.NomeProduto
+                </td>
+                <td>
+                    @x.GtinEan
+                </td>
+                <td class="text-end">
+                    @x.PrecoDeVenda.ToString("C")
+                </td>
+                <td class="text-end">
+                    @x.Estoque
+                </td>
+                <td>
+                    @x.Status
+                </td>
+                <td class="text-end">
+                    <a asp-page="Edit" asp-route-id="@x.ProdutoId" class="btn btn-sm btn-outline-primary">
+                        Alterar
+                    </a>
+                    <form method="post" asp-page-handler="Excluir" asp-route-id="@x.ProdutoId" class="d-inline" onsubmit="return confirm('Excluir este produto?')">
+                        <button class="btn btn-sm btn-outline-danger">
+                            Excluir
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

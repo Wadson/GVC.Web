@@ -1,0 +1,31 @@
+@page "{id:int}"
+@model GVC.Web.Pages.Configuracoes.FormasPagamento.EditModel
+@{ViewData["Title"]="Alterar forma de pagamento";}
+<h1>
+    Alterar forma de pagamento
+</h1>
+<form method="post" class="card">
+    <input asp-for="Item.FormaPgtoId" type="hidden">
+    <div class="card-body">
+        <div asp-validation-summary="All" class="text-danger">
+        </div>
+        <label class="form-label">
+            Descrição
+        </label>
+        <input asp-for="Item.NomeFormaPagamento" class="form-control">
+        <div class="form-check mt-3">
+            <input asp-for="Item.Ativo" class="form-check-input">
+            <label class="form-check-label">
+                Ativa
+            </label>
+        </div>
+    </div>
+    <div class="card-footer">
+        <a asp-page="Index" class="btn btn-light">
+            Cancelar
+        </a>
+        <button class="btn btn-primary">
+            Salvar
+        </button>
+    </div>
+</form>

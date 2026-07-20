@@ -1,0 +1,73 @@
+@page "{id:int}"
+@model GVC.Web.Pages.Usuarios.EditModel
+@{ViewData["Title"]="Alterar usuário";}
+<h1>
+    Alterar usuário
+</h1>
+<form method="post" class="card">
+    <input asp-for="Usuario.UsuarioId" type="hidden">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="All" class="text-danger">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Nome completo
+            </label>
+            <input asp-for="Usuario.NomeCompleto" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Perfil
+            </label>
+            <select asp-for="Usuario.TipoUsuario" class="form-select">
+                <option>
+                    Administrador
+                </option>
+                <option>
+                    Operador
+                </option>
+                <option>
+                    Caixa
+                </option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                CPF
+            </label>
+            <input asp-for="Usuario.Cpf" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Nascimento
+            </label>
+            <input asp-for="Usuario.DataNascimento" type="date" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Usuário
+            </label>
+            <input asp-for="Usuario.NomeUsuario" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">
+                E-mail
+            </label>
+            <input asp-for="Usuario.Email" class="form-control">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">
+                Nova senha (deixe vazio para manter)
+            </label>
+            <input asp-for="NovaSenha" type="password" class="form-control">
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-page="Index" class="btn btn-light">
+            Cancelar
+        </a>
+        <button class="btn btn-primary">
+            Salvar alterações
+        </button>
+    </div>
+</form>

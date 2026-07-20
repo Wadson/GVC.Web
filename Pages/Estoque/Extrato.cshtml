@@ -1,0 +1,61 @@
+@page
+@model GVC.Web.Pages.Estoque.ExtratoModel
+@{ViewData["Title"]="Extrato de estoque";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Extrato de estoque
+    </h1>
+    <a asp-page="AjusteManual" class="btn btn-primary">
+        Ajustar estoque
+    </a>
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Data
+                </th>
+                <th>
+                    Produto
+                </th>
+                <th>
+                    Tipo
+                </th>
+                <th>
+                    Origem
+                </th>
+                <th class="text-end">
+                    Quantidade
+                </th>
+                <th class="text-end">
+                    Saldo
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Movimentos){
+            <tr>
+                <td>
+                    @x.DataMovimentacao.ToString("g")
+                </td>
+                <td>
+                    @x.Produto.NomeProduto
+                </td>
+                <td>
+                    @x.TipoMovimentacao
+                </td>
+                <td>
+                    @x.Origem
+                </td>
+                <td class="text-end">
+                    @x.Quantidade
+                </td>
+                <td class="text-end">
+                    @x.EstoqueAtual
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

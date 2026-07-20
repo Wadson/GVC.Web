@@ -1,0 +1,259 @@
+@page
+@model GVC.Web.Pages.Financeiro.Recebiveis.IndexModel
+@{ViewData["Title"]="Contas a receber";}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-0">
+            Contas a receber
+        </h1>
+        <small class="text-secondary">
+            Empresa:
+            <strong>
+                @(User.FindFirst("EmpresaNome")?.Value ?? "Não selecionada")
+            </strong>
+        </small>
+    </div>
+</div>
+<form method="get" class="card card-body mb-3">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label asp-for="Cliente" class="form-label">
+                Cliente
+            </label>
+            <input asp-for="Cliente" class="form-control" placeholder="Nome do cliente">
+        </div>
+        <div class="col-md-2">
+            <label asp-for="VendaId" class="form-label">
+                Venda
+            </label>
+            <input asp-for="VendaId" class="form-control" placeholder="Código">
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Inicio" class="form-label">
+                Vencimento inicial
+            </label>
+            <input asp-for="Inicio" type="date" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label asp-for="Fim" class="form-label">
+                Vencimento final
+            </label>
+            <input asp-for="Fim" type="date" class="form-control">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label d-block">
+                Status da conta
+            </label>
+            <div class="d-flex flex-wrap gap-3 border rounded p-2">
+                @foreach(var status in Model.StatusDisponiveis){
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="StatusSelecionados" value="@status" id="status_@status" checked="@(Model.StatusSelecionados.Contains(status,StringComparer.OrdinalIgnoreCase) ? "checked" : null)">
+                    <label class="form-check-label" for="status_@status">
+                        @status
+                    </label>
+                </div>
+                }
+            </div>
+            <small class="text-secondary">
+                Sem marcação, serão considerados todos os status.
+            </small>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Situacao" class="form-label">
+                Situação do vencimento
+            </label>
+            <select asp-for="Situacao" class="form-select">
+                <option value="">
+                    Todas
+                </option>
+                <option value="Vencidas">
+                    Vencidas em aberto
+                </option>
+                <option value="AVencer">
+                    A vencer
+                </option>
+            </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button class="btn btn-primary flex-grow-1">
+                <i class="bi bi-search">
+                </i>
+                Pesquisar
+            </button>
+            <a asp-page="Index" class="btn btn-outline-secondary">
+                Limpar
+            </a>
+        </div>
+    </div>
+</form>
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card card-body">
+            <small class="text-secondary">
+                Total das parcelas
+            </small>
+            <strong class="fs-4">
+                @Model.TotalParcelas.ToString("C")
+            </strong>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-body">
+            <small class="text-secondary">
+                Total recebido
+            </small>
+            <strong class="fs-4 text-success">
+                @Model.TotalRecebido.ToString("C")
+            </strong>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-body">
+            <small class="text-secondary">
+                Saldo em aberto
+            </small>
+            <strong class="fs-4 text-primary">
+                @Model.SaldoAberto.ToString("C")
+            </strong>
+        </div>
+    </div>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col">
+        <div class="card card-body text-center">
+            <strong class="fs-4">
+                @Model.Quantidade
+            </strong>
+            <small class="text-secondary">
+                Encontradas
+            </small>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-body text-center">
+            <strong class="fs-4 text-danger">
+                @Model.Vencidas
+            </strong>
+            <small class="text-secondary">
+                Vencidas
+            </small>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-body text-center">
+            <strong class="fs-4 text-warning">
+                @Model.Pendentes
+            </strong>
+            <small class="text-secondary">
+                Pendentes
+            </small>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-body text-center">
+            <strong class="fs-4 text-info">
+                @Model.ParcialmentePagas
+            </strong>
+            <small class="text-secondary">
+                Parciais
+            </small>
+        </div>
+    </div>
+    <div class="col">
+        <div class="card card-body text-center">
+            <strong class="fs-4 text-success">
+                @Model.Pagas
+            </strong>
+            <small class="text-secondary">
+                Pagas
+            </small>
+        </div>
+    </div>
+</div>
+<div class="card table-responsive">
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Cliente
+                </th>
+                <th>
+                    Venda
+                </th>
+                <th>
+                    Parcela
+                </th>
+                <th>
+                    Vencimento
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Valor
+                </th>
+                <th class="text-end">
+                    Recebido
+                </th>
+                <th class="text-end">
+                    Saldo
+                </th>
+                <th class="text-end">
+                    Ações
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(Model.Itens.Count==0){
+            <tr>
+                <td colspan="9" class="text-center text-secondary py-5">
+                    Nenhuma conta encontrada com os filtros informados.
+                </td>
+            </tr>
+            }@foreach(var x in Model.Itens){var saldo=x.ValorParcela-(x.ValorRecebido??0);
+            <tr class="@(x.DataVencimento<DateTime.Today&&x.Status!="Pago"&&x.Status!="Cancelada"?"table-warning":"")">
+                <td>
+                    @x.Venda.Cliente.Nome
+                </td>
+                <td>
+                    <a href="/Vendas/Details?id=@x.VendaId">
+                        #@x.VendaId
+                    </a>
+                </td>
+                <td>
+                    @x.NumeroParcela
+                </td>
+                <td>
+                    @x.DataVencimento.ToString("dd/MM/yyyy")
+                </td>
+                <td>
+                    @x.Status
+                </td>
+                <td class="text-end">
+                    @x.ValorParcela.ToString("C")
+                </td>
+                <td class="text-end">
+                    @((x.ValorRecebido??0).ToString("C"))
+                </td>
+                <td class="text-end fw-semibold">
+                    @saldo.ToString("C")
+                </td>
+                <td class="text-end">
+                    <a href="/Financeiro/Recebiveis/Pagamentos?id=@x.ParcelaId" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-clock-history">
+                        </i>
+                        Pagamentos
+                    </a>
+                    @if(x.Status!="Pago"&&x.Status!="Cancelada"){
+                    <a href="/Financeiro/Recebiveis/Receber?id=@x.ParcelaId" class="btn btn-sm btn-success">
+                        <i class="bi bi-cash-coin">
+                        </i>
+                        Receber
+                    </a>
+                    }
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

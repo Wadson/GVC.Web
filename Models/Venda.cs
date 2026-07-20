@@ -1,0 +1,81 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace GVC.Web.Models;
+
+[Table("Venda")]
+public class Venda
+{
+    [Key]
+    public int VendaId
+    {
+        get; set;
+    }
+
+    public int ClienteId
+    {
+        get; set;
+    }
+
+    public int? FormaPgtoId
+    {
+        get; set;
+    }
+
+    public DateTime DataVenda
+    {
+        get; set;
+    }
+
+    public string? Observacoes
+    {
+        get; set;
+    }
+
+    [Required, StringLength(20)]
+    public string StatusVenda { get; set; } = "Finalizada";
+
+    public int? VendedorId
+    {
+        get; set;
+    }
+
+    public int EmpresaId
+    {
+        get; set;
+    }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalBruto
+    {
+        get; set;
+    }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalDesconto
+    {
+        get; set;
+    }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal TotalLiquido
+    {
+        get; set;
+    }
+
+    public Cliente Cliente { get; set; } = null!;
+
+    public FormaPagamento? FormaPagamento
+    {
+        get; set;
+    }
+
+    public Vendedor? Vendedor
+    {
+        get; set;
+    }
+
+    public Empresa Empresa { get; set; } = null!;
+
+    public ICollection<ItemVenda> Itens { get; set; } = [];
+}

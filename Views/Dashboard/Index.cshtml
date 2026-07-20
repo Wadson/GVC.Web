@@ -1,0 +1,217 @@
+@using System.Text.Json
+@model DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    string labelsGrafico = JsonSerializer.Serialize(
+        Model.FaturamentoUltimos30Dias.Select(x => x.Data.ToString("dd/MM")));
+    string valoresGrafico = JsonSerializer.Serialize(
+        Model.FaturamentoUltimos30Dias.Select(x => x.ValorTotal));
+    int totalAlertas = Model.CaixasAbertosPendentes + Model.NotasRejeitadas + Model.PedidosAtrasados;
+}
+
+<style>
+    .dashboard-title { color: #003366; }
+    .dashboard-card { border: 0; box-shadow: 0 .3rem 1rem rgba(0, 51, 102, .08); }
+    .dashboard-card .card-header { background: #fff; border-bottom-color: #eef2f6; }
+    .kpi-value { color: #003366; font-size: 1.65rem; font-weight: 700; }
+    .quick-action { min-height: 48px; display: flex; align-items: center; justify-content: space-between; }
+    .chart-container { position: relative; min-height: 320px; }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="dashboard-title mb-1">Visão geral</h1>
+        <p class="text-secondary mb-0">Acompanhe os principais indicadores da empresa ativa.</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="input-group" style="min-width:280px">
+            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <input id="dashboardSearch" type="search" class="form-control" placeholder="Buscar (Alt+K)" aria-label="Buscar no ERP" />
+        </div>
+        <button type="button" class="btn btn-light position-relative" title="Alertas">
+            <i class="bi bi-bell"></i>
+            @if (totalAlertas > 0)
+            {
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">@totalAlertas</span>
+            }
+        </button>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-4">
+        <section class="card dashboard-card h-100">
+            <div class="card-header py-3">
+                <h2 class="h5 mb-0"><i class="bi bi-pin-angle text-primary me-2"></i>Atalhos rápidos</h2>
+            </div>
+            <div class="card-body d-grid gap-2">
+                <a href="/Vendas/PDV" class="btn btn-success quick-action" data-shortcut="F2">
+                    <span><i class="bi bi-plus-circle me-2"></i>Nova venda</span><kbd>F2</kbd>
+                </a>
+                <a href="/Estoque/Extrato" class="btn btn-outline-primary quick-action">
+                    <span><i class="bi bi-box-seam me-2"></i>Consulta de estoque</span>
+                </a>
+                <a href="/Fiscal/NotasFiscais" class="btn btn-outline-primary quick-action">
+                    <span><i class="bi bi-file-earmark-text me-2"></i>Emitir NF-e</span>
+                </a>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        <section class="card dashboard-card h-100">
+            <div class="card-header py-3">
+                <h2 class="h5 mb-0"><i class="bi bi-speedometer2 text-primary me-2"></i>Métricas diárias</h2>
+            </div>
+            <div class="card-body d-grid gap-3">
+                <div class="border rounded p-3">
+                    <small class="text-secondary d-block">Vendas hoje</small>
+                    <span class="kpi-value">@Model.VendasHoje.ToString("C")</span>
+                </div>
+                <div class="border rounded p-3">
+                    <small class="text-secondary d-block">Contas a pagar hoje</small>
+                    <span class="kpi-value">@Model.ContasAPagarHoje.ToString("C")</span>
+                </div>
+                <div class="border rounded p-3">
+                    <small class="text-secondary d-block">Margem média do mês</small>
+                    <span class="kpi-value">@Model.MargemMediaMes.ToString("N2")%</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        <section class="card dashboard-card h-100">
+            <div class="card-header py-3">
+                <h2 class="h5 mb-0"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Alertas e pendências</h2>
+            </div>
+            <div class="card-body d-grid gap-3">
+                <a href="/Caixa" class="alert alert-warning d-flex justify-content-between align-items-center text-decoration-none mb-0">
+                    <span><i class="bi bi-cash-stack me-2"></i>Caixas não fechados</span>
+                    <span class="badge bg-warning text-dark">@Model.CaixasAbertosPendentes</span>
+                </a>
+                <a href="/Fiscal/NotasFiscais" class="alert alert-danger d-flex justify-content-between align-items-center text-decoration-none mb-0">
+                    <span><i class="bi bi-receipt-cutoff me-2"></i>Notas rejeitadas</span>
+                    <span class="badge bg-danger">@Model.NotasRejeitadas</span>
+                </a>
+                <a href="/Fornecedores" class="alert alert-warning d-flex justify-content-between align-items-center text-decoration-none mb-0">
+                    <span><i class="bi bi-truck me-2"></i>Pedidos atrasados</span>
+                    <span class="badge bg-warning text-dark">@Model.PedidosAtrasados</span>
+                </a>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-8">
+        <section class="card dashboard-card h-100">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h2 class="h5 mb-0"><i class="bi bi-graph-up-arrow text-primary me-2"></i>Faturamento — últimos 30 dias</h2>
+            </div>
+            <div class="card-body chart-container">
+                <canvas id="faturamentoChart" aria-label="Gráfico de faturamento diário"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-xl-4">
+        <section class="card dashboard-card h-100">
+            <div class="card-header py-3">
+                <h2 class="h5 mb-0"><i class="bi bi-list-check text-primary me-2"></i>Minhas tarefas</h2>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.TarefasPendentes.Count == 0)
+                {
+                    <div class="text-center text-secondary py-5">
+                        <i class="bi bi-check-circle fs-1 text-success d-block mb-2"></i>
+                        Nenhuma pendência no momento.
+                    </div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var tarefa in Model.TarefasPendentes)
+                        {
+                            <div class="list-group-item p-3">
+                                <div class="d-flex justify-content-between gap-2 mb-2">
+                                    <span>@tarefa.Descricao</span>
+                                    <span class="badge bg-secondary align-self-start">@tarefa.TipoAcao</span>
+                                </div>
+                                <form action="@tarefa.Link" method="get" class="text-end">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-right-circle me-1"></i>Abrir pendência
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script>
+        const chartElement = document.getElementById('faturamentoChart');
+        const labels = @Html.Raw(labelsGrafico);
+        const values = @Html.Raw(valoresGrafico);
+
+        new Chart(chartElement, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Faturamento',
+                    data: values,
+                    borderColor: '#003366',
+                    backgroundColor: 'rgba(0, 51, 102, .12)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: .3,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: value => value.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            })
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: context => context.parsed.y.toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                            })
+                        }
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'F2') {
+                event.preventDefault();
+                window.location.href = '/Vendas/PDV';
+            }
+
+            if (event.altKey && event.key.toLowerCase() === 'k') {
+                event.preventDefault();
+                document.getElementById('dashboardSearch')?.focus();
+            }
+        });
+    </script>
+}

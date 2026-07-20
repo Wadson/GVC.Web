@@ -1,0 +1,19 @@
+@model ReciboPagamentoViewModel
+@{ Layout = "_LayoutImpressao"; ViewData["Title"] = "Recibo de pagamento"; }
+<header class="text-center border-bottom pb-3 mb-4">
+    @if (Model.Empresa.LogoDataUri is not null) { <img src="@Model.Empresa.LogoDataUri" class="company-logo mb-2" alt="Logo" /> }
+    <h1 class="h4 mb-1">@Model.Empresa.RazaoSocial</h1>
+    <div>CNPJ @Model.Empresa.Cnpj</div><div>@Model.Empresa.Endereco</div><div>@Model.Empresa.Telefone</div>
+</header>
+<h2 class="document-title h4 text-center mb-4">RECIBO DE PAGAMENTO Nº @Model.PagamentoId</h2>
+<p>Recebemos de <strong>@Model.ClienteNome</strong> (@Model.ClienteDocumento), referente à venda
+    <strong>#@Model.VendaId</strong>, parcela <strong>@Model.NumeroParcela</strong>, a importância de:</p>
+<div class="border rounded text-center p-3 my-4"><span class="text-secondary">Valor recebido</span><div class="display-6">@Model.ValorPago.ToString("C")</div></div>
+<table class="table table-sm"><tbody>
+    <tr><th>Juros</th><td class="text-end">@Model.Juros.ToString("C")</td></tr>
+    <tr><th>Multa</th><td class="text-end">@Model.Multa.ToString("C")</td></tr>
+    <tr><th>Forma de pagamento</th><td class="text-end">@Model.FormaPagamento</td></tr>
+    <tr><th>Data do pagamento</th><td class="text-end">@Model.DataPagamento.ToString("dd/MM/yyyy")</td></tr>
+</tbody></table>
+@if (!string.IsNullOrWhiteSpace(Model.Observacao)) { <p><strong>Observação:</strong> @Model.Observacao</p> }
+<div class="signature">@Model.Empresa.RazaoSocial</div>

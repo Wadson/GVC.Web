@@ -1,0 +1,99 @@
+@page "{id:int}"
+@model GVC.Web.Pages.Fornecedores.EditModel
+@{ViewData["Title"]="Alterar fornecedor";}
+<h1>
+    Alterar fornecedor
+</h1>
+<form method="post" class="card">
+    <input asp-for="Item.FornecedorId" type="hidden">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="All" class="text-danger">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Nome / Razão social
+            </label>
+            <input asp-for="Item.Nome" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                CNPJ
+            </label>
+            <input asp-for="Item.Cnpj" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Inscrição estadual
+            </label>
+            <input asp-for="Item.Ie" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Telefone
+            </label>
+            <input asp-for="Item.Telefone" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                E-mail
+            </label>
+            <input asp-for="Item.Email" class="form-control">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">
+                CEP
+            </label>
+            <input asp-for="Item.Cep" class="form-control">
+        </div>
+        <div class="col-md-7">
+            <label class="form-label">
+                Logradouro
+            </label>
+            <input asp-for="Item.Logradouro" class="form-control">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">
+                Número
+            </label>
+            <input asp-for="Item.Numero" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">
+                Bairro
+            </label>
+            <input asp-for="Item.Bairro" class="form-control">
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">
+                Cidade
+            </label>
+            <div class="position-relative">
+                <input class="form-control" data-city-search data-city-target="Item_CidadeId" value="@Model.CidadeNome" placeholder="Digite o nome da cidade">
+                <input asp-for="Item.CidadeId" type="hidden">
+                <div data-city-results class="list-group position-absolute w-100 shadow" style="z-index:1050">
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+            <label class="form-label">
+                Observações
+            </label>
+            <textarea asp-for="Item.Observacoes" class="form-control">
+            </textarea>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-page="Index" class="btn btn-light">
+            Cancelar
+        </a>
+        <button class="btn btn-primary">
+            Salvar alterações
+        </button>
+    </div>
+</form>
+@section Scripts{
+<partial name="_ValidationScriptsPartial"/>
+<script>
+    window.gvcCitySearch?.();
+</script>
+}

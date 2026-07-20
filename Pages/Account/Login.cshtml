@@ -1,0 +1,85 @@
+@page
+@model GVC.Web.Pages.Account.LoginModel
+@{Layout=null;}
+<!doctype html>
+<html lang="pt-br">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>
+            Entrar - GVC ERP
+        </title>
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="~/css/site.css">
+    </head>
+    <body class="login-page">
+        <main class="card shadow login-card">
+            <div class="card-body p-4 p-md-5 text-center">
+                <div style="height:110px" class="d-flex align-items-center justify-content-center mb-2">
+                    <img id="empresaLogo" class="img-fluid d-none" style="max-height:105px;max-width:240px" alt="Logo da empresa">
+                    <h1 id="logoFallback" class="h3">
+                        GVC ERP
+                    </h1>
+                </div>
+                <p class="text-secondary mb-4">
+                    Entre para continuar
+                </p>
+                @if(TempData["Message"] is string message){
+                <div class="alert alert-success">
+                    @message
+                </div>
+                }
+                <form method="post" class="text-start">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger">
+                    </div>
+                    <input type="hidden" asp-for="ReturnUrl">
+                    <div class="mb-3">
+                        <label asp-for="Input.EmpresaId" class="form-label">
+                        </label>
+                        <select asp-for="Input.EmpresaId" class="form-select" id="empresaLogin">
+                            <option value="0">
+                                Selecione a empresa...
+                            </option>
+                            @foreach(var empresa in Model.Empresas){
+                            <option value="@empresa.Id" data-logo="@Url.Page("Login","LogoEmpresa",new{empresaId=empresa.Id})">
+                                @empresa.Nome
+                            </option>
+                            }
+                        </select>
+                        <span asp-validation-for="Input.EmpresaId" class="text-danger">
+                        </span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Email" class="form-label">
+                        </label>
+                        <input asp-for="Input.Email" class="form-control" autocomplete="username">
+                        <span asp-validation-for="Input.Email" class="text-danger">
+                        </span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.Senha" class="form-label">
+                        </label>
+                        <input asp-for="Input.Senha" class="form-control" autocomplete="current-password">
+                        <span asp-validation-for="Input.Senha" class="text-danger">
+                        </span>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input asp-for="Input.Lembrar" class="form-check-input">
+                        <label asp-for="Input.Lembrar" class="form-check-label">
+                        </label>
+                    </div>
+                    <button class="btn btn-primary w-100" type="submit">
+                        Entrar
+                    </button>
+                    <a asp-page="ForgotPassword" class="d-block text-center mt-3">
+                        Esqueci minha senha
+                    </a>
+                </form>
+            </div>
+        </main>
+        <partial name="_ValidationScriptsPartial"/>
+        <script>
+            const select=document.getElementById('empresaLogin'),logo=document.getElementById('empresaLogo'),fallback=document.getElementById('logoFallback');function updateLogo(){const url=select.selectedOptions[0]?.dataset.logo;if(!url){logo.classList.add('d-none');fallback.classList.remove('d-none');return}logo.onload=()=>{logo.classList.remove('d-none');fallback.classList.add('d-none')};logo.onerror=()=>{logo.classList.add('d-none');fallback.classList.remove('d-none')};logo.src=url}select.addEventListener('change',updateLogo);updateLogo();
+        </script>
+    </body>
+</html>

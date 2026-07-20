@@ -1,0 +1,53 @@
+@page
+@model GVC.Web.Pages.Fiscal.NotasFiscais.IndexModel
+@{ViewData["Title"]="Documentos fiscais";}
+<h1>
+    Documentos fiscais
+</h1>
+<div class="alert alert-info">
+    A transmissão à SEFAZ requer certificado, CSC/credenciais e biblioteca fiscal configurados. Esta tela acompanha os documentos persistidos.
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Número
+                </th>
+                <th>
+                    Modelo
+                </th>
+                <th>
+                    Emissão
+                </th>
+                <th>
+                    Status SEFAZ
+                </th>
+                <th>
+                    Chave
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Itens){
+            <tr>
+                <td>
+                    @x.NumeroNota
+                </td>
+                <td>
+                    @x.Modelo
+                </td>
+                <td>
+                    @x.DataEmissao.ToString("g")
+                </td>
+                <td>
+                    @x.StatusSefaz
+                </td>
+                <td class="small">
+                    @x.ChaveAcesso
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

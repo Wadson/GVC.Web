@@ -1,0 +1,62 @@
+@page
+@model GVC.Web.Pages.Fornecedores.IndexModel
+@{ViewData["Title"]="Fornecedores";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Fornecedores
+    </h1>
+    <a asp-page="Create" class="btn btn-primary">
+        Novo fornecedor
+    </a>
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Nome
+                </th>
+                <th>
+                    CNPJ
+                </th>
+                <th>
+                    Telefone
+                </th>
+                <th>
+                    E-mail
+                </th>
+                <th class="text-end">
+                    Ações
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Itens){
+            <tr>
+                <td>
+                    @x.Nome
+                </td>
+                <td>
+                    @x.Cnpj
+                </td>
+                <td>
+                    @x.Telefone
+                </td>
+                <td>
+                    @x.Email
+                </td>
+                <td class="text-end">
+                    <a asp-page="Edit" asp-route-id="@x.FornecedorId" class="btn btn-sm btn-outline-primary">
+                        Alterar
+                    </a>
+                    <form method="post" asp-page-handler="Excluir" asp-route-id="@x.FornecedorId" class="d-inline" onsubmit="return confirm('Excluir este fornecedor?')">
+                        <button class="btn btn-sm btn-outline-danger">
+                            Excluir
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

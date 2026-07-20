@@ -1,0 +1,13 @@
+@model RelatorioEstoqueViewModel
+@{ Layout = "_LayoutImpressao"; ViewData["Title"] = "Posição e valorização do estoque"; }
+<header class="d-flex justify-content-between border-bottom pb-3 mb-3"><div><h1 class="document-title h4 mb-1">Posição e valorização do estoque</h1><strong>@Model.Empresa.RazaoSocial</strong><div>CNPJ @Model.Empresa.Cnpj</div></div><div class="text-end">Emitido em<br /><strong>@Model.EmitidoEm.ToString("dd/MM/yyyy HH:mm")</strong></div></header>
+@foreach (var categoria in Model.Itens.GroupBy(x => x.Categoria)) {
+    <h2 class="h5 bg-light p-2 mt-4">@categoria.Key</h2>
+    @foreach (var marca in categoria.GroupBy(x => x.Marca)) {
+        <h3 class="h6 border-bottom pb-1">Marca: @marca.Key</h3>
+        <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Código</th><th>Produto</th><th class="text-end">Estoque</th><th class="text-end">Custo</th><th class="text-end">Venda</th><th class="text-end">Total custo</th><th class="text-end">Total venda</th></tr></thead><tbody>
+        @foreach (var item in marca) { <tr><td>@item.Codigo</td><td>@item.Produto</td><td class="text-end">@item.Estoque</td><td class="text-end">@item.PrecoCusto.ToString("C")</td><td class="text-end">@item.PrecoVenda.ToString("C")</td><td class="text-end">@item.ValorCusto.ToString("C")</td><td class="text-end">@item.ValorVenda.ToString("C")</td></tr> }
+        </tbody></table></div>
+    }
+}
+<div class="border-top pt-3 text-end fs-5"><div>Total a custo: <strong>@Model.TotalCusto.ToString("C")</strong></div><div>Total a venda: <strong>@Model.TotalVenda.ToString("C")</strong></div></div>

@@ -1,0 +1,116 @@
+@page
+@model GVC.Web.Pages.Financeiro.Recebiveis.PagamentosModel
+@{ViewData["Title"]="Pagamentos da parcela";}
+<div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+        <h1 class="mb-0">
+            Pagamentos da parcela
+        </h1>
+        <small class="text-secondary">
+            @Model.Parcela.Venda.Cliente.Nome · Venda #@Model.Parcela.VendaId · Parcela @Model.Parcela.NumeroParcela
+        </small>
+    </div>
+    <a asp-page="Index" class="btn btn-light">
+        Voltar
+    </a>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card card-body">
+            <small class="text-secondary">
+                Valor da parcela
+            </small>
+            <strong class="fs-4">
+                @Model.Parcela.ValorParcela.ToString("C")
+            </strong>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-body">
+            <small class="text-secondary">
+                Total pago
+            </small>
+            <strong class="fs-4 text-success">
+                @Model.TotalPago.ToString("C")
+            </strong>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card card-body">
+            <small class="text-secondary">
+                Saldo
+            </small>
+            <strong class="fs-4 text-primary">
+                @Model.Saldo.ToString("C")
+            </strong>
+        </div>
+    </div>
+</div>
+<form method="post" asp-page-handler="Estornar" asp-route-id="@Model.Parcela.ParcelaId" onsubmit="return confirm('Confirma o estorno dos pagamentos selecionados? O valor será retirado do caixa.')">
+    <div class="card table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th style="width:44px">
+                        <input id="marcarTodos" type="checkbox" class="form-check-input" title="Marcar todos">
+                    </th>
+                    <th>
+                        Data
+                    </th>
+                    <th>
+                        Forma de pagamento
+                    </th>
+                    <th>
+                        Observação
+                    </th>
+                    <th class="text-end">
+                        Valor recebido
+                    </th>
+                    <th class="text-end">Recibo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if(Model.Pagamentos.Count==0){
+                <tr>
+                    <td colspan="6" class="text-center text-secondary py-5">
+                        Nenhum pagamento registrado para esta parcela.
+                    </td>
+                </tr>
+                }@foreach(var pagamento in Model.Pagamentos){
+                <tr>
+                    <td>
+                        <input type="checkbox" class="form-check-input pagamento-check" name="PagamentoIds" value="@pagamento.PagamentoId">
+                    </td>
+                    <td>
+                        @pagamento.DataPagamento.ToString("dd/MM/yyyy")
+                    </td>
+                    <td>
+                        @(pagamento.FormaPagamento?.NomeFormaPagamento??"Não informada")
+                    </td>
+                    <td>
+                        @pagamento.Observacao
+                    </td>
+                    <td class="text-end fw-semibold">
+                        @pagamento.ValorPago.ToString("C")
+                    </td>
+                    <td class="text-end"><a href="/ContasAReceber/ImprimirRecibo/@pagamento.PagamentoId" class="btn btn-sm btn-outline-primary" target="_blank"><i class="bi bi-printer"></i> Imprimir</a></td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        @if(Model.Pagamentos.Count>0){
+        <div class="card-footer text-end">
+            <button class="btn btn-danger">
+                <i class="bi bi-arrow-counterclockwise">
+                </i>
+                Estornar selecionados
+            </button>
+        </div>
+        }
+    </div>
+</form>
+@section Scripts{
+<script>
+    const all=document.getElementById('marcarTodos');all?.addEventListener('change',()=>document.querySelectorAll('.pagamento-check').forEach(x=>x.checked=all.checked));
+</script>
+}

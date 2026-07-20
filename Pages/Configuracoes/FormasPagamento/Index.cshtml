@@ -1,0 +1,50 @@
+@page
+@model GVC.Web.Pages.Configuracoes.FormasPagamento.IndexModel
+@{ViewData["Title"]="Formas de pagamento";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Formas de pagamento
+    </h1>
+    <a asp-page="Create" class="btn btn-primary">
+        Nova forma
+    </a>
+</div>
+<div class="card">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Descrição
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Ações
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Itens){
+            <tr>
+                <td>
+                    @x.NomeFormaPagamento
+                </td>
+                <td>
+                    @(x.Ativo?"Ativa":"Inativa")
+                </td>
+                <td class="text-end">
+                    <a asp-page="Edit" asp-route-id="@x.FormaPgtoId" class="btn btn-sm btn-outline-primary">
+                        Alterar
+                    </a>
+                    <form method="post" asp-page-handler="Excluir" asp-route-id="@x.FormaPgtoId" class="d-inline" onsubmit="return confirm('Excluir esta forma?')">
+                        <button class="btn btn-sm btn-outline-danger">
+                            Excluir
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

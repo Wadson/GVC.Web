@@ -1,0 +1,8 @@
+@model ComprovanteComissaoViewModel
+@{ Layout = "_LayoutImpressao"; ViewData["Title"] = "Comprovante de comissão"; }
+<header class="text-center border-bottom pb-3 mb-4">@if (Model.Empresa.LogoDataUri is not null) { <img src="@Model.Empresa.LogoDataUri" class="company-logo" alt="Logo" /> }<h1 class="h5">@Model.Empresa.RazaoSocial</h1><div>CNPJ @Model.Empresa.Cnpj</div></header>
+<h2 class="document-title h4 text-center">COMPROVANTE DE PAGAMENTO DE COMISSÃO</h2>
+<p class="mt-4">Vendedor: <strong>@Model.Vendedor</strong> — CPF @Model.Cpf</p>
+<table class="table"><tbody><tr><th>Período das vendas</th><td>@Model.DataInicial.ToString("dd/MM/yyyy") a @Model.DataFinal.ToString("dd/MM/yyyy")</td></tr><tr><th>Total de vendas</th><td class="text-end">@Model.TotalVendas.ToString("C")</td></tr><tr><th>Percentual aplicado</th><td class="text-end">@Model.PercentualComissao.ToString("N2")%</td></tr><tr class="fs-5"><th>Valor pago</th><th class="text-end">@Model.ValorPago.ToString("C")</th></tr><tr><th>Data do pagamento</th><td>@Model.DataPagamento.ToString("dd/MM/yyyy")</td></tr><tr><th>Status</th><td>@Model.Status</td></tr></tbody></table>
+@if (!string.IsNullOrWhiteSpace(Model.Observacoes)) { <p><strong>Observações:</strong> @Model.Observacoes</p> }
+<div class="signature">@Model.Vendedor</div>

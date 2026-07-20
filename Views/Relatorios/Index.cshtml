@@ -1,0 +1,28 @@
+@model CentralRelatoriosViewModel
+@{ ViewData["Title"] = "Relatórios e documentos"; }
+<div class="mb-4"><h1 class="mb-1">Relatórios e documentos</h1><p class="text-secondary mb-0">Relatórios gerenciais e segunda via dos documentos impressos.</p></div>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><a href="/ContasAReceber/RelatorioInadimplencia" class="card card-body text-decoration-none h-100 shadow-sm border-0"><i class="bi bi-person-exclamation fs-2 text-danger"></i><strong class="mt-2">Inadimplência e extrato</strong><small class="text-secondary">Saldos vencidos e a vencer por cliente</small></a></div>
+    <div class="col-md-4"><a href="/Relatorios/Estoque" class="card card-body text-decoration-none h-100 shadow-sm border-0"><i class="bi bi-boxes fs-2 text-primary"></i><strong class="mt-2">Posição do estoque</strong><small class="text-secondary">Valorização a custo e preço de venda</small></a></div>
+    <div class="col-md-4"><a href="/Relatorios/Vendas" class="card card-body text-decoration-none h-100 shadow-sm border-0"><i class="bi bi-graph-up-arrow fs-2 text-success"></i><strong class="mt-2">Relatório de vendas</strong><small class="text-secondary">Consulta e desempenho das vendas</small></a></div>
+</div>
+<div class="row g-4">
+    @Documento("Vendas / orçamentos recentes", "bi-cart-check", Model.Vendas, "/Venda/ImprimirComprovante/")
+    @Documento("Recibos recentes", "bi-receipt", Model.Recibos, "/ContasAReceber/ImprimirRecibo/")
+    @Documento("Caixas recentes", "bi-cash-stack", Model.Caixas, "/Caixa/ImprimirFechamento/")
+    @Documento("Comissões recentes", "bi-person-check", Model.Comissoes, "/Comissao/ImprimirComprovante/")
+</div>
+@functions {
+    Microsoft.AspNetCore.Html.IHtmlContent Documento(string titulo, string icone, List<DocumentoRecenteViewModel> itens, string rota)
+    {
+        var html = new System.Text.StringBuilder();
+        html.Append($"<div class='col-xl-6'><section class='card shadow-sm border-0 h-100'><div class='card-header bg-white py-3'><strong><i class='bi {icone} me-2'></i>{System.Net.WebUtility.HtmlEncode(titulo)}</strong></div><div class='list-group list-group-flush'>");
+        if (itens.Count == 0) html.Append("<div class='p-4 text-secondary text-center'>Nenhum registro encontrado.</div>");
+        foreach (var item in itens)
+        {
+            html.Append($"<a href='{rota}{item.Id}' target='_blank' class='list-group-item list-group-item-action d-flex justify-content-between align-items-center'><span>{System.Net.WebUtility.HtmlEncode(item.Descricao)}<small class='d-block text-secondary'>{item.Data:dd/MM/yyyy HH:mm} · {item.Valor:C}</small></span><i class='bi bi-printer text-primary'></i></a>");
+        }
+        html.Append("</div></section></div>");
+        return new Microsoft.AspNetCore.Html.HtmlString(html.ToString());
+    }
+}

@@ -1,0 +1,63 @@
+@page
+@model GVC.Web.Pages.Vendas.IndexModel
+@{ViewData["Title"]="Vendas";}
+<div class="d-flex justify-content-between mb-3">
+    <h1>
+        Vendas
+    </h1>
+    <a asp-page="PDV" class="btn btn-success">
+        Nova venda
+    </a>
+</div>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Nº
+                </th>
+                <th>
+                    Data
+                </th>
+                <th>
+                    Cliente
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Total
+                </th>
+                <th>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Vendas){
+            <tr>
+                <td>
+                    @x.VendaId
+                </td>
+                <td>
+                    @x.DataVenda.ToString("g")
+                </td>
+                <td>
+                    @x.Cliente.Nome
+                </td>
+                <td>
+                    @x.StatusVenda
+                </td>
+                <td class="text-end">
+                    @x.TotalLiquido.ToString("C")
+                </td>
+                <td>
+                    <a asp-page="Details" asp-route-id="@x.VendaId">
+                        Detalhes
+                    </a>
+                    <a href="/Venda/ImprimirComprovante/@x.VendaId" class="btn btn-sm btn-outline-primary ms-2" target="_blank"><i class="bi bi-printer"></i> Comprovante</a>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>

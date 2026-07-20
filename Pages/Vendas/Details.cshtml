@@ -1,0 +1,148 @@
+@page
+@model GVC.Web.Pages.Vendas.DetailsModel
+@{ViewData["Title"]=$"Venda {Model.Venda.VendaId}";}
+<div class="d-flex justify-content-between align-items-start">
+    <div>
+        <h1>
+            Venda #@Model.Venda.VendaId
+        </h1>
+        <p class="text-secondary">
+            @Model.Venda.Cliente.Nome · @Model.Venda.DataVenda.ToString("g") · @Model.Venda.StatusVenda
+        </p>
+    </div>
+    <strong class="fs-3">
+        @Model.Venda.TotalLiquido.ToString("C")
+    </strong>
+</div>
+<div class="card card-body mb-3">
+    <div class="row">
+        <div class="col-md-4">
+            <small class="text-secondary">
+                Cliente
+            </small>
+            <div>
+                @Model.Venda.Cliente.Nome
+            </div>
+        </div>
+        <div class="col-md-4">
+            <small class="text-secondary">
+                Vendedor
+            </small>
+            <div>
+                @(Model.Venda.Vendedor?.Nome??"Não informado")
+            </div>
+        </div>
+        <div class="col-md-4">
+            <small class="text-secondary">
+                Forma de pagamento
+            </small>
+            <div>
+                @Model.Venda.FormaPagamento?.NomeFormaPagamento
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card table-responsive mb-3">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Produto
+                </th>
+                <th>
+                    Qtd.
+                </th>
+                <th class="text-end">
+                    Unitário
+                </th>
+                <th class="text-end">
+                    Desconto
+                </th>
+                <th class="text-end">
+                    Total
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Venda.Itens){
+            <tr>
+                <td>
+                    @x.Produto.NomeProduto
+                </td>
+                <td>
+                    @x.Quantidade
+                </td>
+                <td class="text-end">
+                    @x.PrecoUnitario.ToString("C")
+                </td>
+                <td class="text-end">
+                    @((x.DescontoItem??0).ToString("C"))
+                </td>
+                <td class="text-end">
+                    @((x.PrecoUnitario*x.Quantidade-(x.DescontoItem??0)).ToString("C"))
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<h2 class="h5">
+    Parcelas
+</h2>
+<div class="card table-responsive">
+    <table class="table mb-0">
+        <thead>
+            <tr>
+                <th>
+                    Nº
+                </th>
+                <th>
+                    Vencimento
+                </th>
+                <th class="text-end">
+                    Valor
+                </th>
+                <th class="text-end">
+                    Recebido
+                </th>
+                <th>
+                    Status
+                </th>
+                <th class="text-end">
+                    Pagamentos
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(var x in Model.Parcelas){
+            <tr>
+                <td>
+                    @x.NumeroParcela
+                </td>
+                <td>
+                    @x.DataVencimento.ToString("dd/MM/yyyy")
+                </td>
+                <td class="text-end">
+                    @x.ValorParcela.ToString("C")
+                </td>
+                <td class="text-end">
+                    @((x.ValorRecebido??0).ToString("C"))
+                </td>
+                <td>
+                    @x.Status
+                </td>
+                <td class="text-end">
+                    <a href="/Financeiro/Recebiveis/Pagamentos?id=@x.ParcelaId" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-clock-history">
+                        </i>
+                        Ver pagamentos
+                    </a>
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<a asp-page="Index" class="btn btn-light mt-3">
+    Voltar
+</a>
