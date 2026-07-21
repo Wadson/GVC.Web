@@ -17,6 +17,8 @@ public class MovimentacaoEstoque
         get; set;
     }
 
+    public int? VariacaoID { get; set; }
+
     [Required, StringLength(20)]
     public string TipoMovimentacao { get; set; } = string.Empty;
 
@@ -85,6 +87,8 @@ public class MovimentacaoEstoque
     }
 
     public Produto Produto { get; set; } = null!;
+
+    public ProdutoVariacao? Variacao { get; set; }
 
     public Fornecedor? Fornecedor
     {

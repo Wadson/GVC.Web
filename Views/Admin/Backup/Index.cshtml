@@ -1,0 +1,172 @@
+@model BackupIndexViewModel
+@{ ViewData["Title"] = "Backup e restauração"; }
+
+<style>
+    .backup-kpi { min-height: 92px; }
+    .backup-kpi-value { color: var(--text-card-value); font-size: 1.35rem; font-weight: 700; }
+    .backup-path { word-break: break-all; }
+    [data-bs-theme="dark"] .backup-panel { background: #111827 !important; border-color: #334155 !important; }
+    [data-bs-theme="dark"] .backup-table { --bs-table-bg: #111827; --bs-table-color: #e2e8f0; --bs-table-border-color: #334155; --bs-table-hover-bg: #1e293b; --bs-table-hover-color: #fff; }
+    [data-bs-theme="dark"] .backup-table thead th { background: #0f172a; color: #f8fafc; }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+    <div>
+        <h1 class="h3 mb-1">Backup e restauração</h1>
+        <p class="text-secondary mb-0">Administração manual das cópias do banco erp_gvc.</p>
+    </div>
+    <form asp-controller="Backup" asp-action="Criar" method="post" data-backup-create-form>
+        <button type="submit" class="btn btn-primary" data-backup-create-button>
+            <span class="spinner-border spinner-border-sm d-none" aria-hidden="true" data-backup-spinner></span>
+            <i class="bi bi-floppy me-1" data-backup-icon></i>
+            <span data-backup-label>Gerar novo backup agora</span>
+        </button>
+    </form>
+</div>
+
+<div class="alert alert-warning d-flex gap-2 align-items-start" role="alert">
+    <i class="bi bi-shield-exclamation fs-5"></i>
+    <div>
+        <strong>Atenção:</strong> a pasta precisa conceder leitura e gravação à conta do serviço SQL Server Express.
+        A restauração encerra todas as conexões ativas e substitui integralmente o banco atual.
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card dashboard-card backup-kpi p-3 h-100">
+            <small class="card-title">Último backup</small>
+            <div class="backup-kpi-value mt-2">@(Model.LastBackupAt?.ToString("dd/MM/yyyy HH:mm") ?? "Nenhum")</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card dashboard-card backup-kpi p-3 h-100">
+            <small class="card-title">Espaço ocupado</small>
+            <div class="backup-kpi-value mt-2">@Model.TotalSizeMb.ToString("N2") MB</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card dashboard-card backup-kpi p-3 h-100">
+            <small class="card-title">Cópias disponíveis</small>
+            <div class="backup-kpi-value mt-2">@Model.Files.Count</div>
+        </div>
+    </div>
+</div>
+
+<div class="card backup-panel mb-3">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
+        <div>
+            <strong><i class="bi bi-upload me-1"></i>Enviar backup externo</strong>
+            <small class="d-block text-secondary">O arquivo será armazenado; a restauração exige confirmação separada.</small>
+        </div>
+        <form asp-controller="Backup" asp-action="Upload" method="post" enctype="multipart/form-data" class="d-flex flex-wrap gap-2 align-items-center">
+            <input name="arquivo" type="file" accept=".bak,application/octet-stream" class="form-control form-control-sm" required>
+            <button class="btn btn-sm btn-outline-primary">Enviar .bak</button>
+        </form>
+    </div>
+    <div class="card-body py-2">
+        <small class="text-secondary">Diretório configurado:</small>
+        <code class="backup-path d-block">@Model.DirectoryPath</code>
+    </div>
+</div>
+
+<div class="card backup-panel table-responsive">
+    <table class="table table-sm table-hover align-middle backup-table mb-0">
+        <thead>
+            <tr>
+                <th>Arquivo</th>
+                <th>Criação</th>
+                <th class="text-end">Tamanho</th>
+                <th class="text-end">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (Model.Files.Count == 0)
+        {
+            <tr><td colspan="4" class="text-center text-secondary py-5">Nenhum arquivo de backup disponível.</td></tr>
+        }
+        @foreach (var file in Model.Files)
+        {
+            <tr>
+                <td><i class="bi bi-database me-2 text-primary"></i><strong>@file.FileName</strong></td>
+                <td>@file.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                <td class="text-end">@file.SizeMb.ToString("N2") MB</td>
+                <td class="text-end text-nowrap">
+                    <a asp-controller="Backup" asp-action="Download" asp-route-fileName="@file.FileName" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-download"></i> Baixar
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#restoreModal" data-backup-file="@file.FileName">
+                        <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                    </button>
+                    <form asp-controller="Backup" asp-action="Excluir" method="post" class="d-inline" onsubmit="return confirm('Excluir definitivamente este backup?')">
+                        <input type="hidden" name="fileName" value="@file.FileName">
+                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Excluir</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <form asp-controller="Backup" asp-action="Restaurar" method="post" data-restore-form>
+                <div class="modal-header bg-danger text-white">
+                    <h2 class="modal-title fs-5" id="restoreModalTitle"><i class="bi bi-exclamation-octagon me-2"></i>Restauração crítica</h2>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        Esta operação desconectará os usuários e substituirá todos os dados atuais pelo conteúdo do backup.
+                        Não feche o navegador durante o processamento.
+                    </div>
+                    <input type="hidden" name="FileName" id="restoreFileName">
+                    <p>Arquivo selecionado: <strong id="restoreFileLabel"></strong></p>
+                    <div class="mb-3">
+                        <label for="restorePassword" class="form-label">Sua senha atual</label>
+                        <input id="restorePassword" name="SenhaAtual" type="password" class="form-control" autocomplete="current-password" required>
+                    </div>
+                    <div>
+                        <label for="restoreConfirmation" class="form-label">Digite <strong>CONFIRMAR</strong></label>
+                        <input id="restoreConfirmation" name="Confirmacao" class="form-control" autocomplete="off" required pattern="CONFIRMAR">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger" data-restore-button>
+                        <span class="spinner-border spinner-border-sm d-none" data-restore-spinner></span>
+                        Restaurar banco agora
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelector('[data-backup-create-form]')?.addEventListener('submit', event => {
+            const form = event.currentTarget;
+            form.querySelector('[data-backup-create-button]').disabled = true;
+            form.querySelector('[data-backup-spinner]').classList.remove('d-none');
+            form.querySelector('[data-backup-icon]').classList.add('d-none');
+            form.querySelector('[data-backup-label]').textContent = 'Gerando backup…';
+        });
+
+        document.getElementById('restoreModal')?.addEventListener('show.bs.modal', event => {
+            const fileName = event.relatedTarget.dataset.backupFile;
+            document.getElementById('restoreFileName').value = fileName;
+            document.getElementById('restoreFileLabel').textContent = fileName;
+            document.getElementById('restorePassword').value = '';
+            document.getElementById('restoreConfirmation').value = '';
+        });
+
+        document.querySelector('[data-restore-form]')?.addEventListener('submit', event => {
+            const form = event.currentTarget;
+            form.querySelector('[data-restore-button]').disabled = true;
+            form.querySelector('[data-restore-spinner]').classList.remove('d-none');
+        });
+    </script>
+}

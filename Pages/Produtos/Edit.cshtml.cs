@@ -4,6 +4,7 @@ using GVC.Web.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using GVC.Web.ViewModels;
 
 namespace GVC.Web.Pages.Produtos;
 
@@ -18,18 +19,28 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
         get; set;
     }
 
+    [BindProperty]
+    public List<ProdutoVariacaoInputModel> Variacoes { get; set; } = [];
+
     public SelectList Fornecedores { get; private set; } = null!;
 
     public SelectList Marcas { get; private set; } = null!;
 
-    public SelectList Categorias { get; private set; } = null!;
+    public IReadOnlyList<SelectListItem> Categorias { get; private set; } = [];
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Produto = await db.Produtos.AsNoTracking().SingleOrDefaultAsync(x => x.ProdutoId == id && x.EmpresaId == EmpresaId) ?? null!;
+        Produto = await db.Produtos.AsNoTracking().Include(x => x.Variacoes).ThenInclude(x => x.Atributos).SingleOrDefaultAsync(x => x.ProdutoId == id && x.EmpresaId == EmpresaId) ?? null!;
 
         if (Produto is null)
             return NotFound();
+
+        Variacoes = Produto.Variacoes.OrderBy(x => x.VariacaoId).Select(x => new ProdutoVariacaoInputModel
+        {
+            VariacaoId = x.VariacaoId, Sku = x.Sku ?? string.Empty, GtinEan = x.GtinEan, PrecoCusto = x.PrecoCusto,
+            PrecoDeVenda = x.PrecoDeVenda, ImagemAtual = x.Imagem, Estoque = x.Estoque, Status = x.Status,
+            Atributos = x.Atributos.Select(a => new ProdutoVariacaoAtributoInputModel { NomeAtributo = a.NomeAtributo, ValorAtributo = a.ValorAtributo }).ToList()
+        }).ToList();
 
         await LoadAsync();
 
@@ -38,7 +49,7 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        var entity = await db.Produtos.SingleOrDefaultAsync(x => x.ProdutoId == Produto.ProdutoId && x.EmpresaId == EmpresaId, cancellationToken);
+        var entity = await db.Produtos.Include(x => x.Variacoes).ThenInclude(x => x.Atributos).SingleOrDefaultAsync(x => x.ProdutoId == Produto.ProdutoId && x.EmpresaId == EmpresaId, cancellationToken);
 
         if (entity is null)
             return NotFound();
@@ -72,22 +83,43 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
 
         entity.Imagem = currentImage;
 
-        string? novaImagem = null;
+        if (Produto.TemVariacao)
+        {
+            entity.Estoque = 0;
+            entity.GtinEan = null;
+        }
+        else
+        {
+            foreach (var variacao in entity.Variacoes) variacao.Status = "Inativo";
+        }
+
+        var novasImagens = new List<string>();
+        var imagensParaExcluir = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
             if (FotoUpload is not null && FotoUpload.Length > 0)
-                novaImagem = entity.Imagem = await ProductImageStorage.SaveAsync(FotoUpload, environment, cancellationToken);
+            {
+                entity.Imagem = await ProductImageStorage.SaveAsync(FotoUpload, environment, cancellationToken);
+                novasImagens.Add(entity.Imagem);
+            }
+
+            if (Produto.TemVariacao)
+                await SincronizarVariacoesAsync(entity, novasImagens, imagensParaExcluir, cancellationToken);
 
             await db.SaveChangesAsync(cancellationToken);
         }
         catch
         {
-            ProductImageStorage.Delete(novaImagem, environment);
+            foreach (var imagem in novasImagens) ProductImageStorage.Delete(imagem, environment);
             throw;
         }
 
         if (!string.Equals(currentImage, entity.Imagem, StringComparison.OrdinalIgnoreCase))
             ProductImageStorage.Delete(currentImage, environment);
+
+        foreach (var imagem in imagensParaExcluir)
+            if (!string.Equals(imagem, currentImage, StringComparison.OrdinalIgnoreCase))
+                ProductImageStorage.Delete(imagem, environment);
 
         TempData["Success"] = "Produto alterado.";
 
@@ -96,6 +128,14 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
 
     private async Task ValidateAsync()
     {
+        NormalizarVariacoes();
+        if (Produto.TemVariacao)
+        {
+            Produto.Estoque = 0;
+            Produto.GtinEan = null;
+            if (Variacoes.Count == 0) ModelState.AddModelError("Variacoes", "Gere ao menos uma variação.");
+            await ValidarVariacoesAsync(Produto.ProdutoId);
+        }
         if (Produto.PrecoCusto < 0 || Produto.PrecoDeVenda < 0 || Produto.PrecoCompra < 0)
             ModelState.AddModelError(string.Empty, "Preços não podem ser negativos.");
 
@@ -107,6 +147,13 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
         if (imageError is not null)
             ModelState.AddModelError("FotoUpload", imageError);
 
+        for (var index = 0; index < Variacoes.Count; index++)
+        {
+            var variationImageError = ProductImageStorage.Validate(Variacoes[index].ArquivoImagem);
+            if (variationImageError is not null)
+                ModelState.AddModelError($"Variacoes[{index}].ArquivoImagem", variationImageError);
+        }
+
         if (Produto.CategoriaId.HasValue && !await db.Categorias.AnyAsync(x => x.CategoriaId == Produto.CategoriaId && x.EmpresaId == EmpresaId))
             ModelState.AddModelError("Produto.CategoriaId", "Selecione uma categoria válida.");
 
@@ -117,12 +164,68 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
             ModelState.AddModelError("Produto.FornecedorId", "Selecione um fornecedor válido.");
     }
 
+    private void NormalizarVariacoes()
+    {
+        foreach (var variacao in Variacoes)
+        {
+            variacao.Sku = variacao.Sku?.Trim() ?? string.Empty;
+            variacao.GtinEan = string.IsNullOrWhiteSpace(variacao.GtinEan) ? null : variacao.GtinEan.Trim();
+            variacao.Status = string.IsNullOrWhiteSpace(variacao.Status) ? "Ativo" : variacao.Status.Trim();
+            variacao.Atributos = variacao.Atributos.Where(x => !string.IsNullOrWhiteSpace(x.NomeAtributo) && !string.IsNullOrWhiteSpace(x.ValorAtributo)).ToList();
+            foreach (var atributo in variacao.Atributos) { atributo.NomeAtributo = atributo.NomeAtributo.Trim(); atributo.ValorAtributo = atributo.ValorAtributo.Trim(); }
+            if (variacao.Estoque < 0 || variacao.PrecoCusto < 0 || variacao.PrecoDeVenda < 0) ModelState.AddModelError("Variacoes", "Estoque e preços das variações não podem ser negativos.");
+        }
+        if (Variacoes.GroupBy(x => x.Sku, StringComparer.OrdinalIgnoreCase).Any(x => x.Count() > 1)) ModelState.AddModelError("Variacoes", "Existem SKUs repetidos na grade.");
+        if (Variacoes.Where(x => x.GtinEan is not null).GroupBy(x => x.GtinEan, StringComparer.OrdinalIgnoreCase).Any(x => x.Count() > 1)) ModelState.AddModelError("Variacoes", "Existem códigos EAN repetidos na grade.");
+    }
+
+    private async Task ValidarVariacoesAsync(int produtoId)
+    {
+        string[] skus = Variacoes.Select(x => x.Sku).Where(x => x.Length > 0).ToArray();
+        string[] eans = Variacoes.Select(x => x.GtinEan).Where(x => x is not null).Cast<string>().ToArray();
+        if (Variacoes.Any(x => string.IsNullOrWhiteSpace(x.Sku) || x.Atributos.Count == 0)) ModelState.AddModelError("Variacoes", "Cada variação deve possuir SKU e atributos.");
+        if (await db.ProdutosVariacoes.AsNoTracking().AnyAsync(x => x.Produto.EmpresaId == EmpresaId && x.ProdutoId != produtoId && ((x.Sku != null && skus.Contains(x.Sku)) || (x.GtinEan != null && eans.Contains(x.GtinEan))))) ModelState.AddModelError("Variacoes", "Já existe uma variação com um dos SKUs ou códigos EAN informados.");
+    }
+
+    private async Task SincronizarVariacoesAsync(
+        Produto produto,
+        ICollection<string> novasImagens,
+        ISet<string> imagensParaExcluir,
+        CancellationToken cancellationToken)
+    {
+        var enviados = Variacoes.Where(x => x.VariacaoId > 0).Select(x => x.VariacaoId).ToHashSet();
+        foreach (var removida in produto.Variacoes.Where(x => !enviados.Contains(x.VariacaoId))) removida.Status = "Inativo";
+        foreach (var input in Variacoes)
+        {
+            var variacao = input.VariacaoId == 0 ? new ProdutoVariacao { ProdutoId = produto.ProdutoId, DataCriacao = DateTime.Now } : produto.Variacoes.SingleOrDefault(x => x.VariacaoId == input.VariacaoId) ?? throw new InvalidOperationException("Variação inválida.");
+            variacao.Sku = input.Sku; variacao.GtinEan = input.GtinEan; variacao.PrecoCusto = input.PrecoCusto; variacao.PrecoDeVenda = input.PrecoDeVenda; variacao.Estoque = input.Estoque; variacao.Status = input.Status;
+            var imagemAnterior = variacao.Imagem;
+            if (input.ArquivoImagem is { Length: > 0 })
+            {
+                variacao.Imagem = await ProductImageStorage.SaveVariationAsync(input.ArquivoImagem, environment, cancellationToken);
+                novasImagens.Add(variacao.Imagem);
+            }
+            else if (input.RemoverImagem)
+            {
+                variacao.Imagem = null;
+            }
+            if (!string.IsNullOrWhiteSpace(imagemAnterior) && !string.Equals(imagemAnterior, variacao.Imagem, StringComparison.OrdinalIgnoreCase))
+                imagensParaExcluir.Add(imagemAnterior);
+            if (input.VariacaoId == 0) produto.Variacoes.Add(variacao); else db.ProdutosVariacoesAtributos.RemoveRange(variacao.Atributos);
+            variacao.Atributos = input.Atributos.Select(x => new ProdutoVariacaoAtributo { NomeAtributo = x.NomeAtributo, ValorAtributo = x.ValorAtributo }).ToList();
+        }
+    }
+
     private async Task LoadAsync()
     {
         Fornecedores = new SelectList(await db.Fornecedores.AsNoTracking().Where(x => x.EmpresaId == EmpresaId).OrderBy(x => x.Nome).ToListAsync(), "FornecedorId", "Nome");
 
         Marcas = new SelectList(await db.Marcas.AsNoTracking().Where(x => x.EmpresaId == EmpresaId).OrderBy(x => x.NomeMarca).ToListAsync(), "MarcaId", "NomeMarca");
 
-        Categorias = new SelectList(await db.Categorias.AsNoTracking().Where(x => x.EmpresaId == EmpresaId).OrderBy(x => x.NomeCategoria).ToListAsync(), "CategoriaId", "NomeCategoria");
+        Categorias = await db.Categorias.AsNoTracking()
+            .Where(x => x.EmpresaId == EmpresaId)
+            .OrderBy(x => x.NomeCategoria)
+            .Select(x => new SelectListItem(x.NomeCategoria, x.CategoriaId.ToString()))
+            .ToListAsync();
     }
 }

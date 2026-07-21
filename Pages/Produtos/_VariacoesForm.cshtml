@@ -1,0 +1,96 @@
+@using System.Globalization
+@model IReadOnlyList<GVC.Web.ViewModels.ProdutoVariacaoInputModel>
+@{ bool temVariacao = ViewData["TemVariacao"] is true; }
+
+<div class="col-12">
+    <div class="form-check form-switch border rounded p-3 ps-5">
+        <input name="Produto.TemVariacao" value="true" class="form-check-input" type="checkbox" id="temVariacaoSwitch" checked="@temVariacao">
+        <input name="Produto.TemVariacao" value="false" type="hidden">
+        <label class="form-check-label fw-semibold" for="temVariacaoSwitch">Este produto possui variações (Cor, Tamanho etc.)?</label>
+        <div class="form-text">O estoque e o código de barras serão controlados individualmente por SKU.</div>
+    </div>
+</div>
+
+<div id="variationArea" class="col-12 d-none">
+    <div class="card border-primary-subtle">
+        <div class="card-header"><strong>Gerador de grade / SKUs filhos</strong></div>
+        <div class="card-body">
+            <div id="attributeDefinitions" class="d-grid gap-2 mb-2"></div>
+            <div class="d-flex gap-2 mb-3">
+                <button id="addAttribute" type="button" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus"></i> Atributo</button>
+                <button id="generateVariations" type="button" class="btn btn-sm btn-primary">Gerar combinações</button>
+            </div>
+            <small class="text-secondary d-block mb-3">Exemplo: atributo “Cor” com valores “Azul, Vermelho” e “Tamanho” com “P, M”.</small>
+            <div class="row g-2 align-items-end rounded border p-2 mb-3 variation-price-tools">
+                <div class="col-md-3">
+                    <label for="bulkVariationCost" class="form-label small mb-1">Custo para replicar</label>
+                    <input id="bulkVariationCost" type="number" min="0" step="0.01" class="form-control form-control-sm" placeholder="Não alterar">
+                </div>
+                <div class="col-md-3">
+                    <label for="bulkVariationPrice" class="form-label small mb-1">Venda para replicar</label>
+                    <input id="bulkVariationPrice" type="number" min="0" step="0.01" class="form-control form-control-sm" placeholder="Não alterar">
+                </div>
+                <div class="col-md-6 d-flex gap-2">
+                    <button id="applyVariationPrices" type="button" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-copy"></i> Aplicar a todas
+                    </button>
+                    <button id="copyFirstVariationPrices" type="button" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-down"></i> Copiar preços da primeira
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle variation-table" style="min-width: 1120px">
+                    <thead><tr><th>Variação</th><th style="width:105px">Imagem</th><th>SKU</th><th>EAN</th><th>Custo</th><th>Venda</th><th>Estoque</th><th>Status</th><th></th></tr></thead>
+                    <tbody id="variationsBody">
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <tr data-variation-row>
+                            <td>
+                                <input type="hidden" name="Variacoes[@i].VariacaoId" value="@Model[i].VariacaoId">
+                                <span data-attribute-summary>@string.Join(" / ", Model[i].Atributos.Select(x => $"{x.NomeAtributo}: {x.ValorAtributo}"))</span>
+                                <div data-attributes-hidden>
+                                @for (int j = 0; j < Model[i].Atributos.Count; j++)
+                                {
+                                    <input type="hidden" name="Variacoes[@i].Atributos[@j].NomeAtributo" value="@Model[i].Atributos[j].NomeAtributo" data-attribute-name>
+                                    <input type="hidden" name="Variacoes[@i].Atributos[@j].ValorAtributo" value="@Model[i].Atributos[j].ValorAtributo" data-attribute-value>
+                                }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1 variation-image-control">
+                                    <img data-variation-preview src="@(string.IsNullOrWhiteSpace(Model[i].ImagemAtual) ? "/images/no-product.svg" : Model[i].ImagemAtual)" class="rounded border" width="42" height="42" style="object-fit:cover" alt="Foto da variação">
+                                    <input type="hidden" name="Variacoes[@i].ImagemAtual" value="@Model[i].ImagemAtual" data-current-image>
+                                    <input type="hidden" name="Variacoes[@i].RemoverImagem" value="false" data-remove-image>
+                                    <input type="file" name="Variacoes[@i].ArquivoImagem" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="d-none" data-variation-image>
+                                    <button type="button" class="btn btn-sm btn-outline-primary choose-variation-image" title="Selecionar foto"><i class="bi bi-camera"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger remove-variation-image" title="Remover foto"><i class="bi bi-x"></i></button>
+                                </div>
+                            </td>
+                            <td><input name="Variacoes[@i].Sku" value="@Model[i].Sku" class="form-control form-control-sm" required></td>
+                            <td><input name="Variacoes[@i].GtinEan" value="@Model[i].GtinEan" class="form-control form-control-sm"></td>
+                            <td><input name="Variacoes[@i].PrecoCusto" value="@Model[i].PrecoCusto?.ToString("0.00", CultureInfo.InvariantCulture)" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Padrão"></td>
+                            <td><input name="Variacoes[@i].PrecoDeVenda" value="@Model[i].PrecoDeVenda?.ToString("0.00", CultureInfo.InvariantCulture)" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Padrão"></td>
+                            <td><input name="Variacoes[@i].Estoque" value="@Model[i].Estoque" type="number" min="0" class="form-control form-control-sm"></td>
+                            <td><select name="Variacoes[@i].Status" class="form-select form-select-sm"><option selected="@(Model[i].Status == "Ativo")">Ativo</option><option selected="@(Model[i].Status == "Inativo")">Inativo</option></select></td>
+                            <td><div class="d-flex gap-1"><button type="button" class="btn btn-sm btn-outline-secondary copy-first-prices d-none" title="Copiar preços desta primeira linha para as demais"><i class="bi bi-copy"></i></button><button type="button" class="btn btn-sm btn-outline-danger remove-variation"><i class="bi bi-trash"></i></button></div></td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="attributeDefinitionTemplate">
+    <div class="row g-2 attribute-definition">
+        <div class="col-md-4"><input class="form-control form-control-sm attribute-name" placeholder="Atributo (ex.: Cor)"></div>
+        <div class="col-md-7"><input class="form-control form-control-sm attribute-values" placeholder="Valores separados por vírgula"></div>
+        <div class="col-md-1"><button type="button" class="btn btn-sm btn-outline-danger remove-attribute"><i class="bi bi-x"></i></button></div>
+    </div>
+</template>
+
+<template id="variationRowTemplate">
+    <tr data-variation-row><td><input type="hidden" data-variation-id value="0"><span data-attribute-summary></span><div data-attributes-hidden></div></td><td><div class="d-flex align-items-center gap-1 variation-image-control"><img data-variation-preview src="/images/no-product.svg" class="rounded border" width="42" height="42" style="object-fit:cover" alt="Foto da variação"><input type="hidden" data-current-image><input type="hidden" data-remove-image value="false"><input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="d-none" data-variation-image><button type="button" class="btn btn-sm btn-outline-primary choose-variation-image" title="Selecionar foto"><i class="bi bi-camera"></i></button><button type="button" class="btn btn-sm btn-outline-danger remove-variation-image" title="Remover foto"><i class="bi bi-x"></i></button></div></td><td><input data-sku class="form-control form-control-sm" required></td><td><input data-gtin class="form-control form-control-sm"></td><td><input data-cost type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Padrão"></td><td><input data-price type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Padrão"></td><td><input data-stock type="number" min="0" value="0" class="form-control form-control-sm"></td><td><select data-status class="form-select form-select-sm"><option>Ativo</option><option>Inativo</option></select></td><td><div class="d-flex gap-1"><button type="button" class="btn btn-sm btn-outline-secondary copy-first-prices d-none" title="Copiar preços desta primeira linha para as demais"><i class="bi bi-copy"></i></button><button type="button" class="btn btn-sm btn-outline-danger remove-variation"><i class="bi bi-trash"></i></button></div></td></tr>
+</template>

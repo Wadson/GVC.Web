@@ -21,10 +21,34 @@ public class PDVModel(ErpDbContext db, IVendaService vendaService) : BasePageMod
 
         var codigoValido = int.TryParse(termo, out var codigo);
 
-        var produtos = await db.Produtos.AsNoTracking().Where(x => x.EmpresaId == EmpresaId && (x.Status == "Ativo" || x.Status == "Disponível") && x.Estoque > 0 &&
+        var produtosPai = await db.Produtos.AsNoTracking().Where(x => x.EmpresaId == EmpresaId && !x.TemVariacao && (x.Status == "Ativo" || x.Status == "Disponível") && x.Estoque > 0 &&
                 (x.GtinEan == termo || x.NomeProduto.Contains(termo) || (x.Referencia != null && x.Referencia.Contains(termo)) || (codigoValido && x.ProdutoId == codigo)))
-            .OrderByDescending(x => x.GtinEan == termo).ThenBy(x => x.NomeProduto).Take(15)
-            .Select(x => new { x.ProdutoId, Nome = x.NomeProduto, x.Referencia, x.GtinEan, PrecoVenda = x.PrecoDeVenda, EstoqueAtual = x.Estoque, x.Imagem }).ToListAsync();
+            .Select(x => new ProdutoPdvView(x.ProdutoId, null, x.NomeProduto, x.Referencia, x.GtinEan, x.PrecoDeVenda, x.Estoque, x.Imagem, x.GtinEan == termo))
+            .ToListAsync();
+
+        var variacoesBanco = await db.ProdutosVariacoes.AsNoTracking()
+            .Where(x => x.Produto.EmpresaId == EmpresaId && x.Produto.TemVariacao && x.Status == "Ativo" && x.Estoque > 0 &&
+                        (x.GtinEan == termo || (x.Sku != null && x.Sku.Contains(termo)) || x.Produto.NomeProduto.Contains(termo) ||
+                         (x.Produto.Referencia != null && x.Produto.Referencia.Contains(termo)) || (codigoValido && x.ProdutoId == codigo)))
+            .Select(x => new
+            {
+                x.ProdutoId, VariacaoID = (int?)x.VariacaoId, Nome = x.Produto.NomeProduto,
+                Referencia = x.Sku ?? x.Produto.Referencia, x.GtinEan,
+                PrecoVenda = x.PrecoDeVenda ?? x.Produto.PrecoDeVenda, EstoqueAtual = x.Estoque,
+                Imagem = x.Imagem ?? x.Produto.Imagem, Exato = x.GtinEan == termo,
+                Atributos = x.Atributos.OrderBy(a => a.AtributoId).Select(a => a.NomeAtributo + ": " + a.ValorAtributo).ToList()
+            }).ToListAsync();
+
+        var variacoes = variacoesBanco.Select(x => new ProdutoPdvView(
+            x.ProdutoId, x.VariacaoID,
+            x.Atributos.Count == 0 ? x.Nome : x.Nome + " — " + string.Join(" / ", x.Atributos),
+            x.Referencia, x.GtinEan, x.PrecoVenda, x.EstoqueAtual, x.Imagem, x.Exato));
+
+        var produtos = produtosPai.Concat(variacoes)
+            .OrderByDescending(x => x.Exato)
+            .ThenBy(x => x.Nome)
+            .Take(15)
+            .ToList();
 
         return new JsonResult(produtos);
     }
@@ -79,4 +103,8 @@ FinalizarVendaInput input, CancellationToken cancellationToken)
     }
 
     public sealed record FormaPagamentoView(int FormaPagamentoId, string Descricao);
+
+    private sealed record ProdutoPdvView(
+        int ProdutoId, int? VariacaoID, string Nome, string? Referencia, string? GtinEan,
+        decimal PrecoVenda, int EstoqueAtual, string? Imagem, bool Exato);
 }

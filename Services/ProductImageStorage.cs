@@ -27,10 +27,32 @@ public static class ProductImageStorage
     }
 
     public static async Task<string> SaveAsync(IFormFile file, IWebHostEnvironment environment, CancellationToken cancellationToken)
+        => await SaveAsync(file, environment, "uploads", "produtos", cancellationToken);
+
+    public static async Task<string> SaveVariationAsync(IFormFile file, IWebHostEnvironment environment, CancellationToken cancellationToken)
+        => await SaveAsync(file, environment, "uploads", "produtos", "variacoes", cancellationToken);
+
+    private static async Task<string> SaveAsync(
+        IFormFile file,
+        IWebHostEnvironment environment,
+        string firstDirectory,
+        string secondDirectory,
+        CancellationToken cancellationToken)
+        => await SaveAsync(file, environment, firstDirectory, secondDirectory, null, cancellationToken);
+
+    private static async Task<string> SaveAsync(
+        IFormFile file,
+        IWebHostEnvironment environment,
+        string firstDirectory,
+        string secondDirectory,
+        string? thirdDirectory,
+        CancellationToken cancellationToken)
     {
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-        var directory = Path.Combine(environment.WebRootPath, "uploads", "produtos");
+        var directory = thirdDirectory is null
+            ? Path.Combine(environment.WebRootPath, firstDirectory, secondDirectory)
+            : Path.Combine(environment.WebRootPath, firstDirectory, secondDirectory, thirdDirectory);
 
         Directory.CreateDirectory(directory);
 
@@ -40,7 +62,9 @@ public static class ProductImageStorage
 
         await file.CopyToAsync(stream, cancellationToken);
 
-        return $"/uploads/produtos/{fileName}";
+        return thirdDirectory is null
+            ? $"/{firstDirectory}/{secondDirectory}/{fileName}"
+            : $"/{firstDirectory}/{secondDirectory}/{thirdDirectory}/{fileName}";
     }
 
     public static void Delete(string? relativePath, IWebHostEnvironment environment)

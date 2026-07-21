@@ -1,0 +1,93 @@
+@page
+@model GVC.Web.Pages.Financeiro.ContasPagar.CreateModel
+@{ ViewData["Title"] = "Nova conta a pagar"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h1 class="mb-1">Nova conta a pagar</h1>
+        <p class="text-secondary mb-0">Registre uma despesa e acompanhe seu vencimento.</p>
+    </div>
+    <a href="@Url.Action("Index", "ContasAPagar")" class="btn btn-outline-secondary">
+        <span aria-hidden="true">←</span> Voltar
+    </a>
+</div>
+
+<form method="post" class="card">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="col-md-7">
+            <label asp-for="Input.Descricao" class="form-label"></label>
+            <input asp-for="Input.Descricao" class="form-control" autofocus>
+            <span asp-validation-for="Input.Descricao" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-5">
+            <label asp-for="Input.FornecedorId" class="form-label"></label>
+            <select asp-for="Input.FornecedorId" asp-items="Model.Fornecedores" class="form-select">
+                <option value="">Sem fornecedor vinculado</option>
+            </select>
+            <span asp-validation-for="Input.FornecedorId" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-7">
+            <label asp-for="Input.PlanoContasId" class="form-label"></label>
+            <select asp-for="Input.PlanoContasId" asp-items="Model.PlanosContas" class="form-select">
+                <option value="0">Selecione uma conta de despesa...</option>
+            </select>
+            <span asp-validation-for="Input.PlanoContasId" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-5">
+            <label asp-for="Input.NumeroDocumento" class="form-label"></label>
+            <input asp-for="Input.NumeroDocumento" class="form-control">
+            <span asp-validation-for="Input.NumeroDocumento" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Input.DataEmissao" class="form-label"></label>
+            <input asp-for="Input.DataEmissao" type="date" class="form-control">
+            <span asp-validation-for="Input.DataEmissao" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Input.DataVencimento" class="form-label"></label>
+            <input asp-for="Input.DataVencimento" type="date" class="form-control">
+            <span asp-validation-for="Input.DataVencimento" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-4">
+            <label asp-for="Input.Valor" class="form-label"></label>
+            <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input asp-for="Input.Valor" type="text" class="form-control" inputmode="decimal" placeholder="0,00" autocomplete="off">
+            </div>
+            <span asp-validation-for="Input.Valor" class="text-danger"></span>
+        </div>
+
+        <div class="col-md-6">
+            <label asp-for="Input.FormaPgtoId" class="form-label"></label>
+            <select asp-for="Input.FormaPgtoId" asp-items="Model.FormasPagamento" class="form-select">
+                <option value="">Não definida</option>
+            </select>
+            <span asp-validation-for="Input.FormaPgtoId" class="text-danger"></span>
+        </div>
+
+        <div class="col-12">
+            <label asp-for="Input.Observacoes" class="form-label"></label>
+            <textarea asp-for="Input.Observacoes" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Input.Observacoes" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="card-footer text-end">
+        <a asp-page="Index" class="btn btn-light">Cancelar</a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg" aria-hidden="true"></i> Salvar conta
+        </button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

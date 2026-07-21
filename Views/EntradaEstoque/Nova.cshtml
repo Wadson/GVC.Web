@@ -5,6 +5,8 @@
     string produtosJson = JsonSerializer.Serialize(Model.Produtos.Select(x => new
     {
         id = x.Id,
+        variacaoID = x.VariacaoID,
+        codigo = x.Codigo,
         descricao = x.Descricao,
         precoCompra = x.PrecoCompra,
         precoCusto = x.PrecoCusto
@@ -16,6 +18,120 @@
     .xml-drop-zone.dragging { border-color: #003366; background: #eaf4ff; }
     .entry-card { border: 0; box-shadow: 0 .3rem 1rem rgba(0, 51, 102, .08); }
     .product-search { min-width: 260px; }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-card {
+        background-color: #111827 !important;
+        border: 1px solid #334155 !important;
+        box-shadow: 0 .35rem 1rem rgba(0, 0, 0, .35);
+        color: #f8fafc;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-card .card-header,
+    [data-bs-theme="dark"] .stock-entry-form .entry-card .card-footer {
+        background-color: #0f172a !important;
+        border-color: #334155;
+        color: #f8fafc;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .form-label,
+    [data-bs-theme="dark"] .stock-entry-form label:not(.xml-drop-zone) {
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .form-control,
+    [data-bs-theme="dark"] .stock-entry-form .form-select,
+    [data-bs-theme="dark"] .stock-entry-form textarea {
+        background-color: #1e293b !important;
+        border: 1px solid #475569 !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .form-control::placeholder,
+    [data-bs-theme="dark"] .stock-entry-form textarea::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .form-control:focus,
+    [data-bs-theme="dark"] .stock-entry-form .form-select:focus,
+    [data-bs-theme="dark"] .stock-entry-form textarea:focus {
+        background-color: #1e293b !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 .25rem rgba(59, 130, 246, .25);
+        color: #fff !important;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .form-control:disabled,
+    [data-bs-theme="dark"] .stock-entry-form .form-select:disabled {
+        background-color: #181f2c !important;
+        color: #94a3b8 !important;
+        opacity: 1;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .form-select option,
+    [data-bs-theme="dark"] .stock-entry-form datalist option {
+        background-color: #1e293b;
+        color: #f8fafc;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-table {
+        --bs-table-bg: #111827;
+        --bs-table-color: #e2e8f0;
+        --bs-table-border-color: #334155;
+        --bs-table-hover-bg: #1e293b;
+        --bs-table-hover-color: #fff;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-table thead th,
+    [data-bs-theme="dark"] .stock-entry-form .entry-table .table-light th {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-table tbody td {
+        border-bottom-color: #334155;
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-table tfoot th,
+    [data-bs-theme="dark"] .stock-entry-form .entry-table tfoot td {
+        background-color: #0f172a;
+        border-color: #475569;
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-total-value {
+        color: #4ade80 !important;
+        font-weight: 700;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-total-field {
+        background-color: #0f172a;
+        border: 1px solid #334155;
+        border-radius: .5rem;
+        padding: .65rem;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .entry-total-field .form-control {
+        color: #4ade80 !important;
+        font-weight: 700;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .xml-drop-zone {
+        background-color: #0f172a;
+        border-color: #475569;
+        color: #f8fafc !important;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .xml-drop-zone.dragging {
+        background-color: #172554;
+        border-color: #3b82f6;
+    }
+
+    [data-bs-theme="dark"] .stock-entry-form .text-secondary {
+        color: #94a3b8 !important;
+    }
 </style>
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -43,7 +159,7 @@
     </li>
 </ul>
 
-<div class="tab-content mb-4">
+<div class="tab-content mb-4 stock-entry-form">
     <div id="xmlPane" class="tab-pane fade @(Model.OrigemXml ? "show active" : null)">
         <form action="/EntradaEstoque/UploadXml" method="post" enctype="multipart/form-data" class="card entry-card">
             @Html.AntiForgeryToken()
@@ -82,7 +198,7 @@
     </div>
 </div>
 
-<form id="entradaForm" action="/EntradaEstoque/Salvar" method="post">
+<form id="entradaForm" action="/EntradaEstoque/Salvar" method="post" class="stock-entry-form">
     @Html.AntiForgeryToken()
     <input asp-for="OrigemXml" type="hidden" id="origemXml" />
     <textarea asp-for="XmlConteudo" class="d-none"></textarea>
@@ -150,7 +266,7 @@
             </button>
         </div>
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
+            <table class="table table-hover align-middle mb-0 entry-table">
                 <thead class="table-light">
                     <tr>
                         <th style="min-width:300px">Produto interno / de-para</th>
@@ -164,11 +280,12 @@
                 <tbody id="itemsBody">
                     @for (int i = 0; i < Model.Itens.Count; i++)
                     {
-                        var produtoSelecionado = Model.Produtos.FirstOrDefault(x => x.Id == Model.Itens[i].ProdutoId);
+                        var produtoSelecionado = Model.Produtos.FirstOrDefault(x => x.Id == Model.Itens[i].ProdutoId && x.VariacaoID == Model.Itens[i].VariacaoID);
                         <tr data-item-row>
                             <td>
                                 <input data-field="ProdutoId" value="@Model.Itens[i].ProdutoId" type="hidden" class="produto-id" />
-                                <input class="form-control product-search" list="produtosList" value="@(produtoSelecionado is null ? null : $"{produtoSelecionado.Id} - {produtoSelecionado.Descricao}")" placeholder="Digite o código ou nome" />
+                                <input data-field="VariacaoID" value="@Model.Itens[i].VariacaoID" type="hidden" class="variacao-id" />
+                                <input class="form-control product-search" list="produtosList" value="@(produtoSelecionado is null ? null : $"{produtoSelecionado.Codigo} - {produtoSelecionado.Descricao}")" placeholder="Digite o código ou nome" />
                                 <small class="text-secondary d-block mt-1">
                                     @if (!string.IsNullOrWhiteSpace(Model.Itens[i].CodigoFornecedor))
                                     {
@@ -191,7 +308,7 @@
                 <tfoot>
                     <tr>
                         <th colspan="4" class="text-end">Total dos produtos</th>
-                        <th id="productsTotal" class="text-end fs-5">@Model.ValorTotalProdutos.ToString("C")</th>
+                        <th id="productsTotal" class="text-end fs-5 entry-total-value">@Model.ValorTotalProdutos.ToString("C")</th>
                         <th></th>
                     </tr>
                 </tfoot>
@@ -202,7 +319,7 @@
     <datalist id="produtosList">
         @foreach (var produto in Model.Produtos)
         {
-            <option value="@produto.Id - @produto.Descricao"></option>
+            <option value="@produto.Codigo - @produto.Descricao"></option>
         }
     </datalist>
 
@@ -212,15 +329,15 @@
         </div>
         <div class="card-body">
             <div class="row g-3 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-4 entry-total-field">
                     <label asp-for="ValorFrete" class="form-label">Frete</label>
                     <input asp-for="ValorFrete" type="number" min="0" step="0.01" class="form-control total-input" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 entry-total-field">
                     <label asp-for="ValorDesconto" class="form-label">Desconto</label>
                     <input asp-for="ValorDesconto" type="number" min="0" step="0.01" class="form-control total-input" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-4 entry-total-field">
                     <label asp-for="ValorTotalNota" class="form-label">Valor total da nota</label>
                     <input asp-for="ValorTotalNota" type="number" min="0.01" step="0.01" class="form-control fw-bold" />
                     <input asp-for="ValorTotalProdutos" type="hidden" />
@@ -246,7 +363,7 @@
             </div>
 
             <div class="table-responsive border rounded">
-                <table class="table table-sm align-middle mb-0">
+                <table class="table table-sm align-middle mb-0 entry-table">
                     <thead class="table-light"><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th></th></tr></thead>
                     <tbody id="installmentsBody">
                         @for (int i = 0; i < Model.Parcelas.Count; i++)
@@ -259,7 +376,7 @@
                             </tr>
                         }
                     </tbody>
-                    <tfoot><tr><th colspan="2" class="text-end">Total parcelado</th><th id="installmentsTotal">R$ 0,00</th><th></th></tr></tfoot>
+                    <tfoot><tr><th colspan="2" class="text-end">Total parcelado</th><th id="installmentsTotal" class="entry-total-value">R$ 0,00</th><th></th></tr></tfoot>
                 </table>
             </div>
         </div>
@@ -277,6 +394,7 @@
     <tr data-item-row>
         <td>
             <input data-field="ProdutoId" type="hidden" class="produto-id" value="0" />
+            <input data-field="VariacaoID" type="hidden" class="variacao-id" />
             <input class="form-control product-search" list="produtosList" placeholder="Digite o código ou nome" />
             <input data-field="CodigoFornecedor" type="hidden" />
             <input data-field="DescricaoFornecedor" type="hidden" />
@@ -355,11 +473,12 @@
                 row.querySelectorAll('.item-qty,.item-price,.item-cost').forEach(input => input.addEventListener('input', recalculate));
                 row.querySelector('.remove-item').addEventListener('click', () => { row.remove(); recalculate(); });
                 row.querySelector('.product-search').addEventListener('change', event => {
-                    const id = Number.parseInt(event.target.value, 10);
-                    const product = products.find(item => item.id === id);
+                    const codigo = event.target.value.split(' ')[0];
+                    const product = products.find(item => item.codigo === codigo);
                     row.querySelector('.produto-id').value = product?.id ?? 0;
+                    row.querySelector('.variacao-id').value = product?.variacaoID ?? '';
                     if (product) {
-                        event.target.value = `${product.id} - ${product.descricao}`;
+                        event.target.value = `${product.codigo} - ${product.descricao}`;
                         if (!number(row.querySelector('.item-price').value)) row.querySelector('.item-price').value = product.precoCompra.toFixed(2);
                         if (!number(row.querySelector('.item-cost').value)) row.querySelector('.item-cost').value = product.precoCusto.toFixed(2);
                     }
@@ -374,11 +493,12 @@
 
             function addOrderItem(item) {
                 const row = document.getElementById('itemTemplate').content.firstElementChild.cloneNode(true);
-                const product = products.find(productItem => productItem.id === item.produtoId);
+                const product = products.find(productItem => productItem.id === item.produtoId && !productItem.variacaoID);
                 row.querySelector('.produto-id').value = item.produtoId;
+                row.querySelector('.variacao-id').value = '';
                 row.querySelector('.product-search').value = product
-                    ? `${product.id} - ${product.descricao}`
-                    : `${item.produtoId} - ${item.descricao}`;
+                    ? `${product.codigo} - ${product.descricao}`
+                    : `P${item.produtoId} - ${item.descricao}`;
                 row.querySelector('[data-field="CodigoFornecedor"]').value = item.codigo ?? '';
                 row.querySelector('[data-field="DescricaoFornecedor"]').value = item.descricao ?? '';
                 row.querySelector('.item-qty').value = item.quantidade;

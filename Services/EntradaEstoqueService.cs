@@ -208,6 +208,19 @@ public sealed class EntradaEstoqueService(ErpDbContext db) : IEntradaEstoqueServ
             throw new InvalidOperationException("Um ou mais produtos não pertencem à empresa ativa.");
         }
 
+        int[] variacoesIds = input.Itens
+            .Where(x => x.VariacaoID.HasValue)
+            .Select(x => x.VariacaoID!.Value)
+            .Distinct()
+            .ToArray();
+        var variacoes = await db.ProdutosVariacoes
+            .Where(x => variacoesIds.Contains(x.VariacaoId) && x.Produto.EmpresaId == empresaId)
+            .ToDictionaryAsync(x => x.VariacaoId, cancellationToken);
+        if (variacoes.Count != variacoesIds.Length)
+        {
+            throw new InvalidOperationException("Uma ou mais variações não pertencem à empresa ativa.");
+        }
+
         decimal totalProdutos = input.Itens.Sum(x => x.Quantidade * x.PrecoUnitarioCompra);
         decimal totalCalculado = totalProdutos + input.ValorFrete - input.ValorDesconto;
         decimal totalNota = input.ValorTotalNota > 0 ? input.ValorTotalNota : totalCalculado;
@@ -244,8 +257,26 @@ public sealed class EntradaEstoqueService(ErpDbContext db) : IEntradaEstoqueServ
         foreach (EntradaEstoqueItemDTO item in input.Itens)
         {
             Produto produto = produtos[item.ProdutoId];
-            int estoqueAnterior = produto.Estoque;
-            produto.Estoque += item.Quantidade;
+            ProdutoVariacao? variacao = null;
+            if (item.VariacaoID.HasValue)
+            {
+                variacao = variacoes[item.VariacaoID.Value];
+                if (variacao.ProdutoId != produto.ProdutoId)
+                    throw new InvalidOperationException("A variação informada não pertence ao produto selecionado.");
+            }
+            else if (produto.TemVariacao)
+            {
+                throw new InvalidOperationException($"Selecione uma variação para {produto.NomeProduto}.");
+            }
+
+            int estoqueAnterior = variacao?.Estoque ?? produto.Estoque;
+            if (variacao is null)
+                produto.Estoque += item.Quantidade;
+            else
+            {
+                variacao.Estoque += item.Quantidade;
+                variacao.PrecoCusto = item.PrecoCustoUnitario;
+            }
             produto.PrecoCompra = item.PrecoUnitarioCompra;
             produto.PrecoCusto = item.PrecoCustoUnitario;
             produto.DataDeEntrada = agora;
@@ -255,6 +286,7 @@ public sealed class EntradaEstoqueService(ErpDbContext db) : IEntradaEstoqueServ
             {
                 DocumentoEntradaId = documento.DocumentoEntradaId,
                 ProdutoId = produto.ProdutoId,
+                VariacaoID = variacao?.VariacaoId,
                 Quantidade = item.Quantidade,
                 PrecoUnitarioCompra = item.PrecoUnitarioCompra,
                 PrecoCustoUnitario = item.PrecoCustoUnitario,
@@ -266,11 +298,12 @@ public sealed class EntradaEstoqueService(ErpDbContext db) : IEntradaEstoqueServ
             db.MovimentacoesEstoque.Add(new MovimentacaoEstoque
             {
                 ProdutoId = produto.ProdutoId,
+                VariacaoID = variacao?.VariacaoId,
                 TipoMovimentacao = "ENTRADA",
                 Quantidade = item.Quantidade,
                 EstoqueAnterior = estoqueAnterior,
-                EstoqueAtual = produto.Estoque,
-                Origem = "DOC_ENTRADA",
+                EstoqueAtual = variacao?.Estoque ?? produto.Estoque,
+                Origem = "COMPRA",
                 Documento = documento.NumeroDocumento,
                 DataMovimentacao = agora,
                 Usuario = usuarioNome,

@@ -1,0 +1,58 @@
+@model EditarContaAPagarViewModel
+@{ ViewData["Title"] = "Editar conta a pagar"; }
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Editar conta a pagar</h1>
+    <a href="@Url.Action("Index", "ContasAPagar")" class="btn btn-outline-secondary"><span aria-hidden="true">←</span> Voltar</a>
+</div>
+
+<form asp-controller="ContasAPagar" asp-action="Editar" method="post" class="card">
+    <input asp-for="ContasAPagarId" type="hidden">
+    <div class="card-body row g-3">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <div class="col-md-7">
+            <label asp-for="Descricao" class="form-label"></label>
+            <input asp-for="Descricao" class="form-control">
+            <span asp-validation-for="Descricao" class="text-danger"></span>
+        </div>
+        <div class="col-md-5">
+            <label asp-for="FornecedorId" class="form-label"></label>
+            <select asp-for="FornecedorId" asp-items="Model.Fornecedores" class="form-select"><option value="">Sem fornecedor</option></select>
+            <span asp-validation-for="FornecedorId" class="text-danger"></span>
+        </div>
+        <div class="col-md-7">
+            <label asp-for="PlanoContasId" class="form-label"></label>
+            <select asp-for="PlanoContasId" asp-items="Model.PlanosContas" class="form-select"><option value="0">Selecione...</option></select>
+            <span asp-validation-for="PlanoContasId" class="text-danger"></span>
+        </div>
+        <div class="col-md-5">
+            <label asp-for="NumeroDocumento" class="form-label"></label>
+            <input asp-for="NumeroDocumento" class="form-control">
+        </div>
+        <div class="col-md-4">
+            <label asp-for="DataEmissao" class="form-label"></label>
+            <input asp-for="DataEmissao" type="date" class="form-control">
+            <span asp-validation-for="DataEmissao" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="DataVencimento" class="form-label"></label>
+            <input asp-for="DataVencimento" type="date" class="form-control">
+            <span asp-validation-for="DataVencimento" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Valor" class="form-label"></label>
+            <div class="input-group"><span class="input-group-text">R$</span><input asp-for="Valor" type="text" class="form-control" inputmode="decimal" autocomplete="off"></div>
+            <span asp-validation-for="Valor" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Observacoes" class="form-label"></label>
+            <textarea asp-for="Observacoes" class="form-control" rows="4"></textarea>
+        </div>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-controller="ContasAPagar" asp-action="Index" class="btn btn-light">Cancelar</a>
+        <button class="btn btn-primary"><i class="bi bi-check-lg"></i> Salvar alterações</button>
+    </div>
+</form>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

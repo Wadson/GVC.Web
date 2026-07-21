@@ -27,6 +27,7 @@ public sealed class PermissionAuthorizationMiddleware(RequestDelegate next)
         ["/Relatorios/Vendas"] = "Faturamento",
         ["/Fiscal"] = "Fiscal",
         ["/Financeiro"] = "Financeiro",
+        ["/ContasAPagar"] = "Financeiro",
         ["/ContasAReceber"] = "Financeiro",
         ["/Comissao"] = "Financeiro",
         ["/PlanoContas"] = "Financeiro",

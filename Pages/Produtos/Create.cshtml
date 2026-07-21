@@ -1,6 +1,6 @@
 @page
 @model GVC.Web.Pages.Produtos.CreateModel
-@{ViewData["Title"]="Novo produto";}
+@{ViewData["Title"]="Novo produto"; ViewData["TemVariacao"] = Model.Produto.TemVariacao;}
 <h1>
     Novo produto
 </h1>
@@ -56,6 +56,7 @@
             </label>
             <input asp-for="Produto.Estoque" class="form-control">
         </div>
+        <partial name="_VariacoesForm" model="Model.Variacoes" />
         <div class="col-md-3">
             <label class="form-label">
                 Validade
@@ -113,7 +114,7 @@
             </label>
             <select asp-for="Produto.CategoriaId" asp-items="Model.Categorias" class="form-select">
                 <option value="">
-                    Nenhuma
+                    Selecione uma categoria
                 </option>
             </select>
         </div>
@@ -206,4 +207,5 @@
 <script>
     window.gvcImagePreview?.();
 </script>
+<script src="~/js/product-variations.js" asp-append-version="true"></script>
 }

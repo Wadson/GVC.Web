@@ -9,7 +9,29 @@ public class IndexModel(ErpDbContext db) : BasePageModel
 {
     public IReadOnlyList<Fornecedor> Itens { get; private set; } = [];
 
-    public async Task OnGetAsync() => Itens = await db.Fornecedores.AsNoTracking().Where(x => x.EmpresaId == EmpresaId).OrderBy(x => x.Nome).ToListAsync();
+    [BindProperty(SupportsGet = true)]
+    public string? Busca { get; set; }
+
+    public async Task OnGetAsync(CancellationToken cancellationToken)
+    {
+        IQueryable<Fornecedor> query = db.Fornecedores
+            .AsNoTracking()
+            .Where(x => x.EmpresaId == EmpresaId);
+
+        Busca = Busca?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(Busca))
+        {
+            query = query.Where(x =>
+                x.Nome.Contains(Busca) ||
+                (x.Cnpj != null && x.Cnpj.Contains(Busca)) ||
+                (x.Email != null && x.Email.Contains(Busca)));
+        }
+
+        Itens = await query
+            .OrderBy(x => x.Nome)
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<IActionResult> OnPostExcluirAsync(int id)
     {

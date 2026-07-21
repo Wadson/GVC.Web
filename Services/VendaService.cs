@@ -39,6 +39,20 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
         if (produtos.Count != ids.Length)
             throw new InvalidOperationException("Um ou mais produtos são inválidos.");
 
+        var variacoesIds = input.Itens
+            .Where(x => x.VariacaoID.HasValue)
+            .Select(x => x.VariacaoID!.Value)
+            .Distinct()
+            .ToArray();
+        var variacoes = await db.ProdutosVariacoes
+            .Where(x => variacoesIds.Contains(x.VariacaoId) &&
+                        x.Produto.EmpresaId == empresaId &&
+                        x.Status == "Ativo")
+            .ToDictionaryAsync(x => x.VariacaoId, ct);
+
+        if (variacoes.Count != variacoesIds.Length)
+            throw new InvalidOperationException("Uma ou mais variações são inválidas ou não pertencem à empresa ativa.");
+
         var venda = new Venda { EmpresaId = empresaId, ClienteId = input.ClienteId.Value, VendedorId = input.VendedorId, FormaPgtoId = input.FormaPagamentoId, DataVenda = DateTime.Now };
 
         var movimentos = new List<MovimentacaoEstoque>();
@@ -52,20 +66,37 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
 
             var produto = produtos[item.ProdutoId];
 
-            if (produto.Estoque < quantidade)
-                throw new InvalidOperationException($"Estoque insuficiente para {produto.NomeProduto}.");
+            ProdutoVariacao? variacao = null;
+            if (item.VariacaoID.HasValue)
+            {
+                variacao = variacoes[item.VariacaoID.Value];
+                if (variacao.ProdutoId != produto.ProdutoId)
+                    throw new InvalidOperationException("A variação informada não pertence ao produto selecionado.");
+            }
+            else if (produto.TemVariacao)
+            {
+                throw new InvalidOperationException($"Selecione uma variação para {produto.NomeProduto}.");
+            }
 
-            var bruto = produto.PrecoDeVenda * quantidade;
+            var precoVenda = variacao?.PrecoDeVenda ?? produto.PrecoDeVenda;
+            var estoqueDisponivel = variacao?.Estoque ?? produto.Estoque;
+            if (estoqueDisponivel < quantidade)
+                throw new InvalidOperationException($"Estoque insuficiente para {produto.NomeProduto}{(variacao?.Sku is null ? "" : $" ({variacao.Sku})")}.");
+
+            var bruto = precoVenda * quantidade;
 
             var desconto = Math.Clamp(item.Desconto, 0, bruto);
 
-            var estoqueAnterior = produto.Estoque;
+            var estoqueAnterior = estoqueDisponivel;
+            if (variacao is null)
+                produto.Estoque -= quantidade;
+            else
+                variacao.Estoque -= quantidade;
 
-            produto.Estoque -= quantidade;
+            var estoqueAtual = variacao?.Estoque ?? produto.Estoque;
+            venda.Itens.Add(new ItemVenda { ProdutoId = produto.ProdutoId, VariacaoID = variacao?.VariacaoId, EmpresaId = empresaId, Quantidade = quantidade, PrecoUnitario = precoVenda, DescontoItem = desconto });
 
-            venda.Itens.Add(new ItemVenda { ProdutoId = produto.ProdutoId, EmpresaId = empresaId, Quantidade = quantidade, PrecoUnitario = produto.PrecoDeVenda, DescontoItem = desconto });
-
-            movimentos.Add(new MovimentacaoEstoque { ProdutoId = produto.ProdutoId, EmpresaId = empresaId, TipoMovimentacao = "SAIDA", Quantidade = quantidade, EstoqueAnterior = estoqueAnterior, EstoqueAtual = produto.Estoque, Origem = "Venda", Usuario = usuarioId.ToString(), DataMovimentacao = DateTime.Now });
+            movimentos.Add(new MovimentacaoEstoque { ProdutoId = produto.ProdutoId, VariacaoID = variacao?.VariacaoId, EmpresaId = empresaId, TipoMovimentacao = "SAIDA", Quantidade = quantidade, EstoqueAnterior = estoqueAnterior, EstoqueAtual = estoqueAtual, Origem = "VENDA", Usuario = usuarioId.ToString(), DataMovimentacao = DateTime.Now });
         }
 
         venda.TotalBruto = venda.Itens.Sum(x => x.PrecoUnitario * x.Quantidade);

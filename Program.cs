@@ -4,8 +4,10 @@ using GVC.Web.Middleware;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Http.Features;
 using System.Globalization;
 using QuestPDF.Infrastructure;
+using GVC.Web.ModelBinding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +29,12 @@ builder.Services.AddScoped<IVendaService, VendaService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IEntradaEstoqueService, EntradaEstoqueService>();
+
+builder.Services.AddScoped<IBackupService, BackupService>();
+
+builder.Services.Configure<FormOptions>(options =>
+    options.MultipartBodyLengthLimit = builder.Configuration.GetValue<long?>("BackupSettings:MaxUploadSizeBytes")
+        ?? 5L * 1024 * 1024 * 1024);
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -59,10 +67,17 @@ builder.Services.AddRazorPages(options =>
         .AllowAnonymousToPage("/Account/ForgotPassword")
         .AllowAnonymousToPage("/Account/ResetPassword")
         .AllowAnonymousToPage("/Account/AccessDenied"))
-    .AddMvcOptions(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+    .AddMvcOptions(options =>
+    {
+        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+        options.ModelBinderProviders.Insert(0, new FlexibleDecimalModelBinderProvider());
+    });
 
 builder.Services.AddControllersWithViews()
-    .AddMvcOptions(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+    .AddMvcOptions(options =>
+    {
+        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+    });
 
 var app = builder.Build();
 

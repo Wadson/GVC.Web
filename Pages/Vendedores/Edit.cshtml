@@ -74,36 +74,40 @@
             <label class="form-label">
                 CEP
             </label>
-            <input asp-for="Item.Cep" class="form-control">
+            <input asp-for="Item.Cep" id="CEP" class="form-control" inputmode="numeric" autocomplete="postal-code" data-cep-autocomplete>
         </div>
         <div class="col-md-7">
             <label class="form-label">
                 Endereço
             </label>
-            <input asp-for="Item.Endereco" class="form-control">
+            <input asp-for="Item.Endereco" id="Endereco" class="form-control" autocomplete="address-line1" data-cep-logradouro>
         </div>
         <div class="col-md-2">
             <label class="form-label">
                 Número
             </label>
-            <input asp-for="Item.Numero" class="form-control">
+            <input asp-for="Item.Numero" id="Numero" class="form-control" autocomplete="address-line2" data-cep-numero>
         </div>
         <div class="col-md-4">
             <label class="form-label">
                 Bairro
             </label>
-            <input asp-for="Item.Bairro" class="form-control">
+            <input asp-for="Item.Bairro" id="Bairro" class="form-control" data-cep-bairro>
         </div>
-        <div class="col-md-8">
+        <div class="col-md-6">
             <label class="form-label">
                 Cidade
             </label>
             <div class="position-relative">
-                <input class="form-control" data-city-search data-city-target="Item_CidadeId" value="@Model.CidadeNome" placeholder="Digite o nome da cidade">
-                <input asp-for="Item.CidadeId" type="hidden">
+                <input id="CidadeNome" class="form-control" data-city-search data-city-target="CidadeID" value="@Model.CidadeNome" placeholder="Digite o nome da cidade" autocomplete="off">
+                <input asp-for="Item.CidadeId" id="CidadeID" type="hidden" data-cep-cidade-id>
                 <div data-city-results class="list-group position-absolute w-100 shadow" style="z-index:1050">
                 </div>
             </div>
+        </div>
+        <div class="col-md-2">
+            <label for="UF" class="form-label">UF</label>
+            <input asp-for="Item.Uf" id="UF" class="form-control text-uppercase" maxlength="2" data-cep-uf>
         </div>
         <div class="col-12">
             <label class="form-label">

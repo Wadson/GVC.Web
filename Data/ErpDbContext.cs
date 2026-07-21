@@ -29,6 +29,10 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
 
     public DbSet<Produto> Produtos => Set<Produto>();
 
+    public DbSet<ProdutoVariacao> ProdutosVariacoes => Set<ProdutoVariacao>();
+
+    public DbSet<ProdutoVariacaoAtributo> ProdutosVariacoesAtributos => Set<ProdutoVariacaoAtributo>();
+
     public DbSet<Promocao> Promocoes => Set<Promocao>();
 
     public DbSet<MovimentacaoEstoque> MovimentacoesEstoque => Set<MovimentacaoEstoque>();
@@ -105,9 +109,31 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
 
         Rel<Produto, Empresa>(b, x => x.EmpresaId);
 
+        b.Entity<Produto>()
+            .HasMany(x => x.Variacoes)
+            .WithOne(x => x.Produto)
+            .HasForeignKey(x => x.ProdutoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<ProdutoVariacao>()
+            .HasMany(x => x.Atributos)
+            .WithOne(x => x.Variacao)
+            .HasForeignKey(x => x.VariacaoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<ProdutoVariacao>().HasIndex(x => x.ProdutoId);
+        b.Entity<ProdutoVariacao>().HasIndex(x => x.GtinEan);
+
         Rel<Promocao, Produto>(b, x => x.ProdutoId);
 
         Rel<MovimentacaoEstoque, Produto>(b, x => x.ProdutoId);
+
+        b.Entity<MovimentacaoEstoque>()
+            .HasOne(x => x.Variacao)
+            .WithMany()
+            .HasForeignKey(x => x.VariacaoID)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
 
         Rel<MovimentacaoEstoque, Fornecedor>(b, x => x.FornecedorId);
 
@@ -154,6 +180,13 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
             .OnDelete(DeleteBehavior.Cascade);
 
         Rel<ItemVenda, Produto>(b, x => x.ProdutoId);
+
+        b.Entity<ItemVenda>()
+            .HasOne(x => x.Variacao)
+            .WithMany()
+            .HasForeignKey(x => x.VariacaoID)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
 
         Rel<ItemVenda, Empresa>(b, x => x.EmpresaId);
 
@@ -206,6 +239,13 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
             .OnDelete(DeleteBehavior.Restrict);
 
         Rel<DocumentoEntradaItem, Produto>(b, x => x.ProdutoId);
+
+        b.Entity<DocumentoEntradaItem>()
+            .HasOne(x => x.Variacao)
+            .WithMany()
+            .HasForeignKey(x => x.VariacaoID)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
 
         Rel<ProdutoFornecedorMapeamento, Empresa>(b, x => x.EmpresaId);
 

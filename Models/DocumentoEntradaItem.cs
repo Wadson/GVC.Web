@@ -15,6 +15,8 @@ public class DocumentoEntradaItem
     [Column("ProdutoID")]
     public int ProdutoId { get; set; }
 
+    public int? VariacaoID { get; set; }
+
     public int Quantidade { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
@@ -35,4 +37,6 @@ public class DocumentoEntradaItem
     public DocumentoEntrada DocumentoEntrada { get; set; } = null!;
 
     public Produto Produto { get; set; } = null!;
+
+    public ProdutoVariacao? Variacao { get; set; }
 }

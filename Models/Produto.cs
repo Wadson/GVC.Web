@@ -44,6 +44,11 @@ public class Produto
         get; set;
     }
 
+    public bool TemVariacao { get; set; }
+
+    [NotMapped]
+    public int EstoqueTotal => TemVariacao ? Variacoes.Sum(x => x.Estoque) : Estoque;
+
     public DateTime DataDeEntrada
     {
         get; set;
@@ -176,4 +181,6 @@ public class Produto
     }
 
     public Empresa Empresa { get; set; } = null!;
+
+    public ICollection<ProdutoVariacao> Variacoes { get; set; } = new List<ProdutoVariacao>();
 }

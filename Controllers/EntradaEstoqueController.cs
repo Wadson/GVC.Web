@@ -122,7 +122,7 @@ public class EntradaEstoqueController(ErpDbContext db, IEntradaEstoqueService se
             return Forbid();
 
         termo = termo?.Trim() ?? string.Empty;
-        var query = db.Produtos.AsNoTracking().Where(x => x.EmpresaId == empresaId);
+        var query = db.Produtos.AsNoTracking().Where(x => x.EmpresaId == empresaId && !x.TemVariacao);
         if (!string.IsNullOrWhiteSpace(termo))
         {
             bool possuiId = int.TryParse(termo, out int produtoId);
@@ -131,17 +131,36 @@ public class EntradaEstoqueController(ErpDbContext db, IEntradaEstoqueService se
                                      (possuiId && x.ProdutoId == produtoId));
         }
 
-        var produtos = await query.OrderBy(x => x.NomeProduto).Take(30)
+        var produtosPai = await query.OrderBy(x => x.NomeProduto).Take(30)
             .Select(x => new
             {
                 id = x.ProdutoId,
+                variacaoID = (int?)null,
+                codigo = "P" + x.ProdutoId,
                 descricao = x.NomeProduto,
                 referencia = x.Referencia,
                 precoCompra = x.PrecoCompra ?? 0,
                 precoCusto = x.PrecoCusto
             })
             .ToListAsync(cancellationToken);
-        return Json(produtos);
+
+        var variacoes = await db.ProdutosVariacoes.AsNoTracking()
+            .Where(x => x.Produto.EmpresaId == empresaId && x.Produto.TemVariacao && x.Status == "Ativo" &&
+                        (string.IsNullOrEmpty(termo) || x.Produto.NomeProduto.Contains(termo) ||
+                         (x.Sku != null && x.Sku.Contains(termo)) || (x.GtinEan != null && x.GtinEan == termo)))
+            .OrderBy(x => x.Produto.NomeProduto).Take(30)
+            .Select(x => new
+            {
+                id = x.ProdutoId,
+                variacaoID = (int?)x.VariacaoId,
+                codigo = "V" + x.VariacaoId,
+                descricao = x.Produto.NomeProduto + (x.Sku == null ? "" : " - " + x.Sku),
+                referencia = x.Sku ?? x.Produto.Referencia,
+                precoCompra = x.PrecoCusto ?? x.Produto.PrecoCompra ?? 0,
+                precoCusto = x.PrecoCusto ?? x.Produto.PrecoCusto
+            }).ToListAsync(cancellationToken);
+
+        return Json(produtosPai.Concat(variacoes).Take(30));
     }
 
     [HttpGet("PedidoOrigem/{pedidoId:int}")]
@@ -221,15 +240,34 @@ public class EntradaEstoqueController(ErpDbContext db, IEntradaEstoqueService se
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
-        viewModel.Produtos = await db.Produtos.AsNoTracking()
-            .Where(x => x.EmpresaId == empresaId)
+        var produtosPai = await db.Produtos.AsNoTracking()
+            .Where(x => x.EmpresaId == empresaId && !x.TemVariacao)
             .OrderBy(x => x.NomeProduto)
             .Select(x => new EntradaEstoqueProdutoOptionDTO(
                 x.ProdutoId,
+                null,
                 x.NomeProduto + (x.Referencia == null ? "" : " - " + x.Referencia),
                 x.PrecoCompra ?? 0,
                 x.PrecoCusto))
             .ToListAsync(cancellationToken);
+
+        var variacoesBanco = await db.ProdutosVariacoes.AsNoTracking()
+            .Where(x => x.Produto.EmpresaId == empresaId && x.Produto.TemVariacao && x.Status == "Ativo")
+            .OrderBy(x => x.Produto.NomeProduto)
+            .Select(x => new
+            {
+                x.ProdutoId, VariacaoID = (int?)x.VariacaoId, x.Produto.NomeProduto, x.Sku,
+                PrecoCompra = x.PrecoCusto ?? x.Produto.PrecoCompra ?? 0,
+                PrecoCusto = x.PrecoCusto ?? x.Produto.PrecoCusto,
+                Atributos = x.Atributos.OrderBy(a => a.AtributoId).Select(a => a.ValorAtributo).ToList()
+            }).ToListAsync(cancellationToken);
+
+        var variacoes = variacoesBanco.Select(x => new EntradaEstoqueProdutoOptionDTO(
+            x.ProdutoId, x.VariacaoID,
+            x.NomeProduto + (x.Atributos.Count == 0 ? (x.Sku == null ? "" : " - " + x.Sku) : " — " + string.Join(" / ", x.Atributos)),
+            x.PrecoCompra, x.PrecoCusto));
+
+        viewModel.Produtos = produtosPai.Concat(variacoes).OrderBy(x => x.Descricao).ToList();
     }
 
     private bool TryGetContexto(out int empresaId, out int usuarioId)

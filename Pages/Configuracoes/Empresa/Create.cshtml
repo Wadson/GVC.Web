@@ -69,26 +69,26 @@
         <div class="col-12"><hr class="my-1" /></div>
 
         <div class="col-md-3">
-            <label asp-for="Item.Cep" class="form-label">CEP</label>
-            <input asp-for="Item.Cep" class="form-control" inputmode="numeric" />
+            <label for="Cep" class="form-label">CEP</label>
+            <input asp-for="Item.Cep" id="Cep" class="form-control" inputmode="numeric" autocomplete="postal-code" data-cep-autocomplete />
         </div>
         <div class="col-md-7">
-            <label asp-for="Item.Logradouro" class="form-label">Logradouro</label>
-            <input asp-for="Item.Logradouro" class="form-control" />
+            <label for="Logradouro" class="form-label">Logradouro</label>
+            <input asp-for="Item.Logradouro" id="Logradouro" class="form-control" autocomplete="address-line1" data-cep-logradouro />
         </div>
         <div class="col-md-2">
-            <label asp-for="Item.Numero" class="form-label">Número</label>
-            <input asp-for="Item.Numero" class="form-control" />
+            <label for="Numero" class="form-label">Número</label>
+            <input asp-for="Item.Numero" id="Numero" class="form-control" autocomplete="address-line2" data-cep-numero />
         </div>
         <div class="col-md-4">
-            <label asp-for="Item.Bairro" class="form-label">Bairro</label>
-            <input asp-for="Item.Bairro" class="form-control" />
+            <label for="Bairro" class="form-label">Bairro</label>
+            <input asp-for="Item.Bairro" id="Bairro" class="form-control" data-cep-bairro />
         </div>
         <div class="col-md-8">
             <label class="form-label">Cidade</label>
             <div class="position-relative">
-                <input class="form-control" data-city-search data-city-target="Item_CidadeId" placeholder="Digite o nome da cidade" autocomplete="off" />
-                <input asp-for="Item.CidadeId" type="hidden" />
+                <input id="CidadeNome" class="form-control" data-city-search data-city-target="CidadeID" placeholder="Digite o nome da cidade" autocomplete="off" />
+                <input asp-for="Item.CidadeId" id="CidadeID" type="hidden" data-cep-cidade-id />
                 <div data-city-results class="list-group position-absolute w-100 shadow" style="z-index:1050"></div>
             </div>
             <span asp-validation-for="Item.CidadeId" class="text-danger"></span>

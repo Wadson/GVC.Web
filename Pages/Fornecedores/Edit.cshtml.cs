@@ -1,6 +1,6 @@
 using GVC.Web.Data;
 using GVC.Web.Extensions;
-using GVC.Web.Models;
+using GVC.Web.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,28 +9,52 @@ namespace GVC.Web.Pages.Fornecedores;
 public class EditModel(ErpDbContext db) : BasePageModel
 {
     [BindProperty]
-    public Fornecedor Item { get; set; } = null!;
+    public FornecedorViewModel Item { get; set; } = new();
 
     public string? CidadeNome
     {
         get; private set;
     }
 
-    public async Task<IActionResult> OnGetAsync(int id)
+    public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
-        Item = await db.Fornecedores.AsNoTracking().Include(x => x.Cidade).ThenInclude(x => x.Estado).SingleOrDefaultAsync(x => x.FornecedorId == id && x.EmpresaId == EmpresaId) ?? null!;
+        var entity = await db.Fornecedores
+            .AsNoTracking()
+            .Include(x => x.Cidade)
+            .ThenInclude(x => x.Estado)
+            .SingleOrDefaultAsync(
+                x => x.FornecedorId == id && x.EmpresaId == EmpresaId,
+                cancellationToken);
 
-        if (Item is null)
+        if (entity is null)
             return NotFound();
 
-        CidadeNome = $"{Item.Cidade.Nome} - {Item.Cidade.Estado.Uf}";
+        Item = new FornecedorViewModel
+        {
+            FornecedorId = entity.FornecedorId,
+            Nome = entity.Nome,
+            Cnpj = entity.Cnpj,
+            Ie = entity.Ie,
+            Telefone = entity.Telefone,
+            Email = entity.Email,
+            CidadeId = entity.CidadeId,
+            Logradouro = entity.Logradouro,
+            Numero = entity.Numero,
+            Bairro = entity.Bairro,
+            Cep = entity.Cep,
+            Observacoes = entity.Observacoes
+        };
+
+        CidadeNome = $"{entity.Cidade.Nome} - {entity.Cidade.Estado.Uf}";
 
         return Page();
     }
 
-    public async Task<IActionResult> OnPostAsync()
+    public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        var entity = await db.Fornecedores.SingleOrDefaultAsync(x => x.FornecedorId == Item.FornecedorId && x.EmpresaId == EmpresaId);
+        var entity = await db.Fornecedores.SingleOrDefaultAsync(
+            x => x.FornecedorId == Item.FornecedorId && x.EmpresaId == EmpresaId,
+            cancellationToken);
 
         if (entity is null)
             return NotFound();
@@ -40,11 +64,14 @@ public class EditModel(ErpDbContext db) : BasePageModel
         if (Item.Cnpj.Length > 0 && Item.Cnpj.Length != 14)
             ModelState.AddModelError("Item.Cnpj", "CNPJ inválido.");
 
-        if (!await db.Cidades.AnyAsync(x => x.CidadeId == Item.CidadeId))
+        if (!await db.Cidades.AnyAsync(x => x.CidadeId == Item.CidadeId, cancellationToken))
             ModelState.AddModelError("Item.CidadeId", "Selecione uma cidade válida.");
 
         if (!ModelState.IsValid)
+        {
+            await CarregarCidadeNomeAsync(cancellationToken);
             return Page();
+        }
 
         entity.Nome = Item.Nome;
 
@@ -68,10 +95,19 @@ public class EditModel(ErpDbContext db) : BasePageModel
 
         entity.Observacoes = Item.Observacoes;
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(cancellationToken);
 
-        TempData["Success"] = "Fornecedor alterado.";
+        TempData["Success"] = "Fornecedor atualizado com sucesso!";
 
         return RedirectToPage("Index");
+    }
+
+    private async Task CarregarCidadeNomeAsync(CancellationToken cancellationToken)
+    {
+        CidadeNome = await db.Cidades
+            .AsNoTracking()
+            .Where(x => x.CidadeId == Item.CidadeId)
+            .Select(x => x.Nome + " - " + x.Estado.Uf)
+            .SingleOrDefaultAsync(cancellationToken);
     }
 }

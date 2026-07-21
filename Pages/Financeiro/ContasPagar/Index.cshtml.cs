@@ -8,5 +8,11 @@ public class IndexModel(ErpDbContext db) : BasePageModel
 {
     public IReadOnlyList<ContaAPagar> Itens { get; private set; } = [];
 
-    public async Task OnGetAsync() => Itens = await db.ContasAPagar.AsNoTracking().Include(x => x.Fornecedor).Where(x => x.EmpresaId == EmpresaId).OrderBy(x => x.DataVencimento).ToListAsync();
+    public async Task OnGetAsync(CancellationToken cancellationToken) => Itens = await db.ContasAPagar
+        .AsNoTracking()
+        .Include(x => x.Fornecedor)
+        .Include(x => x.PlanoContas)
+        .Where(x => x.EmpresaId == EmpresaId)
+        .OrderBy(x => x.DataVencimento)
+        .ToListAsync(cancellationToken);
 }

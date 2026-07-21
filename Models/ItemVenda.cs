@@ -22,6 +22,8 @@ public class ItemVenda
         get; set;
     }
 
+    public int? VariacaoID { get; set; }
+
     public int Quantidade
     {
         get; set;
@@ -47,6 +49,8 @@ public class ItemVenda
     public Venda Venda { get; set; } = null!;
 
     public Produto Produto { get; set; } = null!;
+
+    public ProdutoVariacao? Variacao { get; set; }
 
     public Empresa Empresa { get; set; } = null!;
 }

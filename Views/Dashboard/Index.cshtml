@@ -9,15 +9,6 @@
     int totalAlertas = Model.CaixasAbertosPendentes + Model.NotasRejeitadas + Model.PedidosAtrasados;
 }
 
-<style>
-    .dashboard-title { color: #003366; }
-    .dashboard-card { border: 0; box-shadow: 0 .3rem 1rem rgba(0, 51, 102, .08); }
-    .dashboard-card .card-header { background: #fff; border-bottom-color: #eef2f6; }
-    .kpi-value { color: #003366; font-size: 1.65rem; font-weight: 700; }
-    .quick-action { min-height: 48px; display: flex; align-items: center; justify-content: space-between; }
-    .chart-container { position: relative; min-height: 320px; }
-</style>
-
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h1 class="dashboard-title mb-1">Visão geral</h1>
@@ -25,7 +16,7 @@
     </div>
     <div class="d-flex align-items-center gap-2">
         <div class="input-group" style="min-width:280px">
-            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input id="dashboardSearch" type="search" class="form-control" placeholder="Buscar (Alt+K)" aria-label="Buscar no ERP" />
         </div>
         <button type="button" class="btn btn-light position-relative" title="Alertas">
@@ -64,17 +55,38 @@
                 <h2 class="h5 mb-0"><i class="bi bi-speedometer2 text-primary me-2"></i>Métricas diárias</h2>
             </div>
             <div class="card-body d-grid gap-3">
-                <div class="border rounded p-3">
-                    <small class="text-secondary d-block">Vendas hoje</small>
-                    <span class="kpi-value">@Model.VendasHoje.ToString("C")</span>
+                <div class="card dashboard-card dashboard-kpi-card p-3">
+                    <div class="d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <span class="card-title">Vendas hoje</span>
+                            <h3 class="card-value mt-2 mb-0">@Model.VendasHoje.ToString("C")</h3>
+                        </div>
+                        <div class="icon-shape p-3 rounded-circle">
+                            <i class="bi bi-cart-check fs-4" aria-hidden="true"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="border rounded p-3">
-                    <small class="text-secondary d-block">Contas a pagar hoje</small>
-                    <span class="kpi-value">@Model.ContasAPagarHoje.ToString("C")</span>
+                <div class="card dashboard-card dashboard-kpi-card p-3">
+                    <div class="d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <span class="card-title">Contas a pagar hoje</span>
+                            <h3 class="card-value mt-2 mb-0">@Model.ContasAPagarHoje.ToString("C")</h3>
+                        </div>
+                        <div class="icon-shape p-3 rounded-circle">
+                            <i class="bi bi-receipt fs-4" aria-hidden="true"></i>
+                        </div>
+                    </div>
                 </div>
-                <div class="border rounded p-3">
-                    <small class="text-secondary d-block">Margem média do mês</small>
-                    <span class="kpi-value">@Model.MargemMediaMes.ToString("N2")%</span>
+                <div class="card dashboard-card dashboard-kpi-card p-3">
+                    <div class="d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <span class="card-title">Margem média do mês</span>
+                            <h3 class="card-value mt-2 mb-0">@Model.MargemMediaMes.ToString("N2")%</h3>
+                        </div>
+                        <div class="icon-shape p-3 rounded-circle">
+                            <i class="bi bi-percent fs-4" aria-hidden="true"></i>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -158,16 +170,21 @@
         const chartElement = document.getElementById('faturamentoChart');
         const labels = @Html.Raw(labelsGrafico);
         const values = @Html.Raw(valoresGrafico);
+        const isDarkTheme = () => document.documentElement.dataset.bsTheme === 'dark';
+        const chartPalette = () => isDarkTheme()
+            ? { text: '#9ca3af', grid: '#1f2937', line: '#4ade80', fill: 'rgba(74, 222, 128, .14)' }
+            : { text: '#64748b', grid: '#e2e8f0', line: '#2563eb', fill: 'rgba(37, 99, 235, .12)' };
+        const initialPalette = chartPalette();
 
-        new Chart(chartElement, {
+        const faturamentoChart = new Chart(chartElement, {
             type: 'line',
             data: {
                 labels,
                 datasets: [{
                     label: 'Faturamento',
                     data: values,
-                    borderColor: '#003366',
-                    backgroundColor: 'rgba(0, 51, 102, .12)',
+                    borderColor: initialPalette.line,
+                    backgroundColor: initialPalette.fill,
                     borderWidth: 2,
                     fill: true,
                     tension: .3,
@@ -181,12 +198,20 @@
                 scales: {
                     y: {
                         beginAtZero: true,
+                        grid: { color: initialPalette.grid },
                         ticks: {
+                            color: initialPalette.text,
                             callback: value => value.toLocaleString('pt-BR', {
                                 style: 'currency',
                                 currency: 'BRL'
                             })
-                        }
+                        },
+                        border: { color: initialPalette.grid }
+                    },
+                    x: {
+                        grid: { color: initialPalette.grid },
+                        ticks: { color: initialPalette.text },
+                        border: { color: initialPalette.grid }
                     }
                 },
                 plugins: {
@@ -200,6 +225,25 @@
                     }
                 }
             }
+        });
+
+        const updateChartTheme = () => {
+            const palette = chartPalette();
+            faturamentoChart.data.datasets[0].borderColor = palette.line;
+            faturamentoChart.data.datasets[0].backgroundColor = palette.fill;
+
+            for (const scaleName of ['x', 'y']) {
+                faturamentoChart.options.scales[scaleName].ticks.color = palette.text;
+                faturamentoChart.options.scales[scaleName].grid.color = palette.grid;
+                faturamentoChart.options.scales[scaleName].border.color = palette.grid;
+            }
+
+            faturamentoChart.update();
+        };
+
+        new MutationObserver(updateChartTheme).observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-bs-theme']
         });
 
         document.addEventListener('keydown', event => {

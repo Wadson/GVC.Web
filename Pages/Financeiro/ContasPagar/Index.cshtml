@@ -20,6 +20,9 @@
                     Fornecedor
                 </th>
                 <th>
+                    Plano de contas
+                </th>
+                <th>
                     Vencimento
                 </th>
                 <th>
@@ -40,6 +43,9 @@
                     @x.Fornecedor?.Nome
                 </td>
                 <td>
+                    @x.PlanoContas.CodigoClassificacao - @x.PlanoContas.Descricao
+                </td>
+                <td>
                     @x.DataVencimento.ToString("d")
                 </td>
                 <td>
@@ -47,6 +53,14 @@
                 </td>
                 <td class="text-end">
                     @x.Valor.ToString("C")
+                </td>
+            </tr>
+            }
+            @if (Model.Itens.Count == 0)
+            {
+            <tr>
+                <td colspan="6" class="text-center text-secondary py-4">
+                    Nenhuma conta a pagar cadastrada.
                 </td>
             </tr>
             }

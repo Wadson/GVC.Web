@@ -1,7 +1,7 @@
 
 namespace GVC.Web.Services;
 
-public sealed record VendaItemInput(int ProdutoId, decimal Quantidade, decimal Desconto);
+public sealed record VendaItemInput(int ProdutoId, decimal Quantidade, decimal Desconto, int? VariacaoID = null);
 
 public sealed record ParcelaVendaInput(int Numero, DateTime DataVencimento, decimal Valor);
 

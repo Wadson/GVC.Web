@@ -1,0 +1,238 @@
+@using System.Globalization
+@model ContasAPagarFiltroViewModel
+@{ ViewData["Title"] = "Contas a pagar"; }
+
+<style>
+    .payables-kpi { min-height: 64px; }
+    .payables-kpi-label { color: var(--text-card-title); font-size: .72rem; font-weight: 700; letter-spacing: .045em; text-transform: uppercase; }
+    .payables-kpi-value { font-size: 1.25rem; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+    .payables-filters .form-label { font-size: .75rem; font-weight: 600; margin-bottom: .2rem; }
+    .payables-table-container { max-height: calc(100vh - 345px); min-height: 320px; overflow: auto; }
+    .payables-table-container thead { position: sticky; top: 0; z-index: 2; }
+    .payables-table-container thead th { background: var(--bg-card); box-shadow: inset 0 -1px var(--border-input); font-size: .75rem; text-transform: uppercase; white-space: nowrap; }
+    .payables-table-container tbody td { padding-top: .4rem; padding-bottom: .4rem; }
+    .payables-supplier { max-width: 190px; }
+    .payables-category { max-width: 220px; }
+    @@media (max-width: 991.98px) { .payables-table-container { max-height: none; } }
+</style>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <div>
+        <h1 class="h3 mb-0">Contas a pagar</h1>
+        <small class="text-secondary">Controle despesas, vencimentos e pagamentos.</small>
+    </div>
+    <a href="/Financeiro/ContasPagar/Create" class="btn btn-primary">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i> Novo lançamento
+    </a>
+</div>
+
+<div class="row g-2 mb-2">
+    <div class="col-md-4">
+        <div class="card dashboard-card payables-kpi h-100 py-2 px-3 border-start border-danger border-4">
+            <div class="d-flex justify-content-between align-items-center gap-2 h-100">
+                <span class="payables-kpi-label">Total a pagar</span>
+                <span class="payables-kpi-value text-danger">@Model.TotalAPagar.ToString("C")</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card dashboard-card payables-kpi h-100 py-2 px-3 border-start border-success border-4">
+            <div class="d-flex justify-content-between align-items-center gap-2 h-100">
+                <span class="payables-kpi-label">Total pago</span>
+                <span class="payables-kpi-value text-success">@Model.TotalPago.ToString("C")</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card dashboard-card payables-kpi h-100 py-2 px-3 border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-center gap-2 h-100">
+                <span class="payables-kpi-label"><i class="bi bi-exclamation-triangle me-1"></i>Total vencido</span>
+                <span class="payables-kpi-value text-warning">@Model.TotalVencido.ToString("C")</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-controller="ContasAPagar" asp-action="Index" method="get" class="card card-body p-2 mb-2 payables-filters">
+    <div class="row g-2 align-items-end">
+        <div class="col-lg-4">
+            <label asp-for="Busca" class="form-label">Pesquisa</label>
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input asp-for="Busca" class="form-control form-control-sm" placeholder="Descrição, documento ou fornecedor">
+            </div>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label asp-for="DataInicial" class="form-label">Vencimento inicial</label>
+            <input asp-for="DataInicial" type="date" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label asp-for="DataFinal" class="form-label">Vencimento final</label>
+            <input asp-for="DataFinal" type="date" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" class="form-select form-select-sm">
+                <option value="">Todos</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Pago">Pago</option>
+                <option value="Vencido">Vencido</option>
+                <option value="Cancelado">Cancelado</option>
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+            <label asp-for="PlanoContasId" class="form-label">Categoria</label>
+            <select asp-for="PlanoContasId" asp-items="Model.Categorias" class="form-select form-select-sm">
+                <option value="">Todas</option>
+            </select>
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2 mt-1">
+            <a asp-controller="ContasAPagar" asp-action="Index" class="btn btn-sm btn-outline-secondary">Limpar</a>
+            <button type="submit" class="btn btn-sm btn-primary">Aplicar filtros</button>
+        </div>
+    </div>
+</form>
+
+<div class="card table-responsive payables-table-container">
+    <table class="table table-sm table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Descrição / Documento</th>
+                <th>Fornecedor</th>
+                <th>Categoria</th>
+                <th class="text-center">Vencimento</th>
+                <th class="text-center">Status</th>
+                <th class="text-end">Valor</th>
+                <th class="text-end">Saldo</th>
+                <th class="text-center">Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (Model.Itens.Count == 0)
+        {
+            <tr><td colspan="8" class="text-center text-secondary py-5">Nenhuma conta encontrada.</td></tr>
+        }
+        @foreach (var item in Model.Itens)
+        {
+            string badge = item.Status switch
+            {
+                "Pago" => "text-bg-success",
+                "Cancelado" => "text-bg-secondary",
+                "Vencido" => "text-bg-danger",
+                "Pago Parcial" => "text-bg-info",
+                _ => "text-bg-warning"
+            };
+            <tr>
+                <td>
+                    <strong>@item.Descricao</strong>
+                    @if (!string.IsNullOrWhiteSpace(item.NumeroDocumento))
+                    { <small class="d-block text-secondary">Doc. @item.NumeroDocumento</small> }
+                </td>
+                <td><div class="text-truncate payables-supplier" title="@(item.Fornecedor ?? "")">@(item.Fornecedor ?? "—")</div></td>
+                <td><div class="text-truncate payables-category" title="@item.Categoria"><small>@item.Categoria</small></div></td>
+                <td class="text-center text-nowrap">@item.DataVencimento.ToString("dd/MM/yyyy")</td>
+                <td class="text-center"><span class="badge @badge">@item.Status</span></td>
+                <td class="text-end">@item.Valor.ToString("C")</td>
+                <td class="text-end fw-semibold">@item.Saldo.ToString("C")</td>
+                <td class="text-center">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Ações</button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            @if (item.PodeBaixar)
+                            {
+                                <button type="button" class="dropdown-item text-success" data-bs-toggle="modal" data-bs-target="#baixarContaModal"
+                                        data-conta-id="@item.ContasAPagarId" data-conta-descricao="@item.Descricao"
+                                        data-conta-saldo="@item.Saldo.ToString(CultureInfo.InvariantCulture)">
+                                    <i class="bi bi-cash-coin me-2"></i>Pagar / Dar baixa
+                                </button>
+                            }
+                            @if (item.PodeEstornar)
+                            {
+                                <form asp-controller="ContasAPagar" asp-action="Estornar" asp-route-id="@item.ContasAPagarId" method="post"
+                                      onsubmit="return confirm('Confirma o estorno de todos os pagamentos deste título?')">
+                                    <button class="dropdown-item text-warning"><i class="bi bi-arrow-counterclockwise me-2"></i>Estornar</button>
+                                </form>
+                            }
+                            @if (item.PodeEditar)
+                            {
+                                <a asp-controller="ContasAPagar" asp-action="Editar" asp-route-id="@item.ContasAPagarId" class="dropdown-item">
+                                    <i class="bi bi-pencil me-2"></i>Editar
+                                </a>
+                            }
+                            @if (item.PodeCancelar)
+                            {
+                                <form asp-controller="ContasAPagar" asp-action="Cancelar" asp-route-id="@item.ContasAPagarId" method="post"
+                                      onsubmit="return confirm('Confirma o cancelamento deste título?')">
+                                    <button class="dropdown-item text-danger"><i class="bi bi-x-circle me-2"></i>Cancelar</button>
+                                </form>
+                                <div class="dropdown-divider"></div>
+                                <form asp-controller="ContasAPagar" asp-action="Excluir" asp-route-id="@item.ContasAPagarId" method="post"
+                                      onsubmit="return confirm('Excluir definitivamente este título?')">
+                                    <button class="dropdown-item text-danger"><i class="bi bi-trash me-2"></i>Excluir</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="baixarContaModal" tabindex="-1" aria-labelledby="baixarContaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="ContasAPagar" asp-action="Baixar" method="post">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="baixarContaTitulo">Pagar conta</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="ContasAPagarId" id="baixaContaId">
+                    <p id="baixaContaDescricao" class="fw-semibold"></p>
+                    <div class="mb-3">
+                        <label for="baixaDataPagamento" class="form-label">Data do pagamento</label>
+                        <input id="baixaDataPagamento" name="DataPagamento" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="baixaValorPago" class="form-label">Valor pago</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input id="baixaValorPago" name="ValorPago" class="form-control" inputmode="decimal" required>
+                        </div>
+                        <div class="form-text">É permitido pagamento parcial até o saldo do título.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="baixaFormaPagamento" class="form-label">Forma de pagamento</label>
+                        <select id="baixaFormaPagamento" name="FormaPgtoId" asp-items="Model.FormasPagamento" class="form-select" required>
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="baixaObservacoes" class="form-label">Observações</label>
+                        <textarea id="baixaObservacoes" name="Observacoes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Confirmar pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('baixarContaModal')?.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const saldo = Number.parseFloat(button.dataset.contaSaldo);
+            document.getElementById('baixaContaId').value = button.dataset.contaId;
+            document.getElementById('baixaContaDescricao').textContent = button.dataset.contaDescricao;
+            document.getElementById('baixaValorPago').value = saldo.toFixed(2).replace('.', ',');
+            document.getElementById('baixaFormaPagamento').value = '';
+            document.getElementById('baixaObservacoes').value = '';
+        });
+    </script>
+}

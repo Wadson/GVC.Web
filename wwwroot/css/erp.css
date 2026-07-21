@@ -6,7 +6,7 @@
 .erp-shell {
     display: flex;
     min-height: 100vh;
-    background: #f5f7fb;
+    background: var(--bg-app);
 }
 
 .sidebar {
@@ -62,8 +62,8 @@
 
 .topbar {
     height: 64px;
-    background: #fff;
-    border-bottom: 1px solid #e5e8ef;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-input);
     display: flex;
     align-items: center;
     padding: 0 1.5rem;
@@ -98,7 +98,7 @@
 }
 
 .page-header p {
-    color: #6c757d;
+    color: var(--text-label);
 }
 
 .search-results {
