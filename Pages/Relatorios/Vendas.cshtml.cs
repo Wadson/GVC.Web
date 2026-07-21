@@ -1,4 +1,5 @@
 using GVC.Web.Data;
+using GVC.Web.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace GVC.Web.Pages.Relatorios;
@@ -31,7 +32,8 @@ public class VendasModel(ErpDbContext db) : BasePageModel
 
         Fim = fim ?? DateTime.Today;
 
-        var q = db.Vendas.Where(x => x.EmpresaId == EmpresaId && x.DataVenda >= Inicio && x.DataVenda < Fim.AddDays(1) && x.StatusVenda == "Finalizada");
+        var q = db.Vendas.Where(x => x.EmpresaId == EmpresaId && x.DataVenda >= Inicio && x.DataVenda < Fim.AddDays(1) &&
+            (x.StatusVenda == StatusVenda.Concluida || x.StatusVenda == StatusVenda.AguardandoPagamento));
 
         Quantidade = await q.CountAsync();
 

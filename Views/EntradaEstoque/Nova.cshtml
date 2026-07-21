@@ -5,7 +5,7 @@
     string produtosJson = JsonSerializer.Serialize(Model.Produtos.Select(x => new
     {
         id = x.Id,
-        variacaoID = x.VariacaoID,
+        variacaoId = x.VariacaoID,
         codigo = x.Codigo,
         descricao = x.Descricao,
         precoCompra = x.PrecoCompra,
@@ -476,7 +476,7 @@
                     const codigo = event.target.value.split(' ')[0];
                     const product = products.find(item => item.codigo === codigo);
                     row.querySelector('.produto-id').value = product?.id ?? 0;
-                    row.querySelector('.variacao-id').value = product?.variacaoID ?? '';
+                    row.querySelector('.variacao-id').value = product?.variacaoId ?? product?.variacaoID ?? '';
                     if (product) {
                         event.target.value = `${product.codigo} - ${product.descricao}`;
                         if (!number(row.querySelector('.item-price').value)) row.querySelector('.item-price').value = product.precoCompra.toFixed(2);
@@ -493,7 +493,7 @@
 
             function addOrderItem(item) {
                 const row = document.getElementById('itemTemplate').content.firstElementChild.cloneNode(true);
-                const product = products.find(productItem => productItem.id === item.produtoId && !productItem.variacaoID);
+                const product = products.find(productItem => productItem.id === item.produtoId && !(productItem.variacaoId ?? productItem.variacaoID));
                 row.querySelector('.produto-id').value = item.produtoId;
                 row.querySelector('.variacao-id').value = '';
                 row.querySelector('.product-search').value = product

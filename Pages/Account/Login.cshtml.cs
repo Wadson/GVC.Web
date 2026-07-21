@@ -48,7 +48,8 @@ public class LoginModel(ErpDbContext db, IPasswordHasher passwordHasher) : PageM
 
         var empresa = await db.Empresas.AsNoTracking().SingleOrDefaultAsync(x => x.EmpresaId == Input.EmpresaId);
 
-        var usuarios = await db.Usuarios.Where(x => x.Email == Input.Email.Trim()).ToListAsync();
+        var usuarios = await db.Usuarios.Where(x => x.Email == Input.Email.Trim() &&
+            (x.EmpresaId == Input.EmpresaId || x.TipoUsuario == "Administrador")).ToListAsync();
 
         var usuario = usuarios.FirstOrDefault(x => passwordHasher.Verify(Input.Senha, x.Senha));
 

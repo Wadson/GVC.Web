@@ -29,7 +29,8 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
         if (!await db.FormasPagamento.AnyAsync(x => x.FormaPgtoId == input.FormaPagamentoId && x.Ativo, ct))
             throw new InvalidOperationException("Forma de pagamento inválida.");
 
-        var caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == empresaId && x.Status == "Aberto", ct)
+        var caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == empresaId &&
+            x.UsuarioAberturaId == usuarioId && x.DataCaixa == DateTime.Today && x.Status == "Aberto", ct)
             ?? throw new InvalidOperationException("Abra o caixa antes de concluir a venda.");
 
         var ids = input.Itens.Select(x => x.ProdutoId).Distinct().ToArray();
@@ -53,7 +54,7 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
         if (variacoes.Count != variacoesIds.Length)
             throw new InvalidOperationException("Uma ou mais variações são inválidas ou não pertencem à empresa ativa.");
 
-        var venda = new Venda { EmpresaId = empresaId, ClienteId = input.ClienteId.Value, VendedorId = input.VendedorId, FormaPgtoId = input.FormaPagamentoId, DataVenda = DateTime.Now };
+        var venda = new Venda { EmpresaId = empresaId, ClienteId = input.ClienteId.Value, VendedorId = input.VendedorId, FormaPgtoId = input.FormaPagamentoId, DataVenda = DateTime.Now, StatusVenda = StatusVenda.Concluida };
 
         var movimentos = new List<MovimentacaoEstoque>();
 
@@ -94,9 +95,9 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
                 variacao.Estoque -= quantidade;
 
             var estoqueAtual = variacao?.Estoque ?? produto.Estoque;
-            venda.Itens.Add(new ItemVenda { ProdutoId = produto.ProdutoId, VariacaoID = variacao?.VariacaoId, EmpresaId = empresaId, Quantidade = quantidade, PrecoUnitario = precoVenda, DescontoItem = desconto });
+            venda.Itens.Add(new ItemVenda { ProdutoId = produto.ProdutoId, VariacaoID = item.VariacaoID, EmpresaId = empresaId, Quantidade = quantidade, PrecoUnitario = precoVenda, DescontoItem = desconto });
 
-            movimentos.Add(new MovimentacaoEstoque { ProdutoId = produto.ProdutoId, VariacaoID = variacao?.VariacaoId, EmpresaId = empresaId, TipoMovimentacao = "SAIDA", Quantidade = quantidade, EstoqueAnterior = estoqueAnterior, EstoqueAtual = estoqueAtual, Origem = "VENDA", Usuario = usuarioId.ToString(), DataMovimentacao = DateTime.Now });
+            movimentos.Add(new MovimentacaoEstoque { ProdutoId = produto.ProdutoId, VariacaoID = item.VariacaoID, EmpresaId = empresaId, TipoMovimentacao = "SAIDA", Quantidade = quantidade, EstoqueAnterior = estoqueAnterior, EstoqueAtual = estoqueAtual, Origem = "VENDA", Usuario = usuarioId.ToString(), DataMovimentacao = DateTime.Now });
         }
 
         venda.TotalBruto = venda.Itens.Sum(x => x.PrecoUnitario * x.Quantidade);
@@ -129,7 +130,7 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
 
         foreach (var item in parcelas)
         {
-            var parcela = new Parcela { VendaId = venda.VendaId, EmpresaId = empresaId, NumeroParcela = item.Numero, DataVencimento = item.DataVencimento.Date, ValorParcela = item.Valor, Status = input.RecebidoAgora ? "Pago" : "Pendente", ValorRecebido = input.RecebidoAgora ? item.Valor : null, DataPagamento = input.RecebidoAgora ? DateTime.Today : null };
+            var parcela = new Parcela { VendaId = venda.VendaId, EmpresaId = empresaId, NumeroParcela = item.Numero, DataVencimento = item.DataVencimento.Date, ValorParcela = item.Valor, Status = input.RecebidoAgora ? StatusParcela.Pago : StatusParcela.Pendente, ValorRecebido = input.RecebidoAgora ? item.Valor : null, DataPagamento = input.RecebidoAgora ? DateTime.Today : null };
 
             db.Parcelas.Add(parcela);
 

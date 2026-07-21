@@ -105,11 +105,12 @@
                 Cidade
             </label>
             <div class="position-relative">
-                <input id="CidadeNome" class="form-control" data-city-search data-city-target="CidadeID" value="@Model.CidadeNome" placeholder="Digite o nome da cidade" autocomplete="off">
+                <input asp-for="CidadeNome" id="CidadeNome" class="form-control" data-city-search data-city-target="CidadeID" placeholder="Digite o nome da cidade" autocomplete="off">
                 <input asp-for="Cliente.CidadeId" id="CidadeID" type="hidden" data-cep-cidade-id>
                 <div data-city-results class="list-group position-absolute w-100 shadow" style="z-index:1050">
                 </div>
             </div>
+            <span asp-validation-for="Cliente.CidadeId" class="text-danger"></span>
         </div>
         <div class="col-md-3">
             <label class="form-label">

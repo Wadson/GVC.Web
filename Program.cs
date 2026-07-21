@@ -11,12 +11,17 @@ using GVC.Web.ModelBinding;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 QuestPDF.Settings.License = LicenseType.Community;
 
 var connectionString = builder.Configuration.GetConnectionString("ErpConnection")
     ?? throw new InvalidOperationException("A conexão 'ErpConnection' não foi configurada.");
 
 builder.Services.AddDbContext<ErpDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddDbContextFactory<ErpDbContext>(
     options => options.UseSqlServer(connectionString),

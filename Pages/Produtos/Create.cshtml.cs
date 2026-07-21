@@ -82,6 +82,8 @@ public class CreateModel(ErpDbContext db, IWebHostEnvironment environment) : Bas
             if (Variacoes.Count == 0)
                 ModelState.AddModelError("Variacoes", "Gere ao menos uma variação.");
             await ValidarVariacoesAsync(0);
+            if (Variacoes.Any(x => x.VariacaoId != 0))
+                ModelState.AddModelError("Variacoes", "A grade contém identificadores inválidos para um novo produto.");
         }
         if (Produto.PrecoDeVenda < 0 || Produto.PrecoCusto < 0 || Produto.PrecoCompra < 0)
             ModelState.AddModelError(string.Empty, "Preços não podem ser negativos.");

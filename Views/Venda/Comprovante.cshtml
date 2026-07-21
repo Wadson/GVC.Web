@@ -5,11 +5,11 @@
     <h1 class="h5 mb-0">@Model.Empresa.RazaoSocial</h1><small>CNPJ @Model.Empresa.Cnpj<br />@Model.Empresa.Endereco</small>
 </header>
 <h2 class="document-title h5 text-center">COMPROVANTE NÃO FISCAL #@Model.VendaId</h2>
-<div class="row g-2 my-3"><div class="col"><strong>Data:</strong> @Model.DataVenda.ToString("dd/MM/yyyy HH:mm")</div><div class="col"><strong>Status:</strong> @Model.Status</div></div>
+<div class="row g-2 my-3"><div class="col"><strong>Data:</strong> @Model.DataVenda.ToString("dd/MM/yyyy HH:mm")</div><div class="col"><strong>Status:</strong> @Model.Status.Descricao()</div></div>
 <div><strong>Cliente:</strong> @Model.ClienteNome @Model.ClienteDocumento</div><div><strong>Vendedor:</strong> @(Model.VendedorNome ?? "Não informado")</div>
 <div class="table-responsive mt-3"><table class="table table-sm align-middle"><thead><tr><th>Produto</th><th class="text-end">Qtd.</th><th class="text-end hide-thermal">Unitário</th><th class="text-end hide-thermal">Desc.</th><th class="text-end">Subtotal</th></tr></thead><tbody>
 @foreach (var item in Model.Itens) { <tr><td><small>@item.Codigo</small><br />@item.Produto</td><td class="text-end">@item.Quantidade</td><td class="text-end hide-thermal">@item.PrecoUnitario.ToString("C")</td><td class="text-end hide-thermal">@item.Desconto.ToString("C")</td><td class="text-end">@item.Subtotal.ToString("C")</td></tr> }
 </tbody></table></div>
 <table class="table table-sm ms-auto" style="max-width:380px"><tr><th>Total bruto</th><td class="text-end">@Model.TotalBruto.ToString("C")</td></tr><tr><th>Descontos</th><td class="text-end">@Model.TotalDesconto.ToString("C")</td></tr><tr class="fs-5"><th>Total líquido</th><th class="text-end">@Model.TotalLiquido.ToString("C")</th></tr></table>
-@if (Model.Parcelas.Count > 0) { <h3 class="h6">Parcelas</h3><table class="table table-sm"><thead><tr><th>Nº</th><th>Vencimento</th><th>Status</th><th class="text-end">Valor</th></tr></thead><tbody>@foreach (var p in Model.Parcelas) { <tr><td>@p.Numero</td><td>@p.Vencimento.ToString("dd/MM/yyyy")</td><td>@p.Status</td><td class="text-end">@p.Valor.ToString("C")</td></tr> }</tbody></table> }
+@if (Model.Parcelas.Count > 0) { <h3 class="h6">Parcelas</h3><table class="table table-sm"><thead><tr><th>Nº</th><th>Vencimento</th><th>Status</th><th class="text-end">Valor</th></tr></thead><tbody>@foreach (var p in Model.Parcelas) { <tr><td>@p.Numero</td><td>@p.Vencimento.ToString("dd/MM/yyyy")</td><td>@p.Status.Descricao()</td><td class="text-end">@p.Valor.ToString("C")</td></tr> }</tbody></table> }
 @if (!string.IsNullOrWhiteSpace(Model.Observacoes)) { <p><strong>Observações:</strong> @Model.Observacoes</p> }

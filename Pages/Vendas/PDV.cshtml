@@ -1,7 +1,7 @@
 @page
 @model GVC.Web.Pages.Vendas.PDVModel
 @{ViewData["Title"]="PDV";}
-<div id="pdvApp" data-product-url="@Url.Page("PDV","BuscarProdutos")" data-client-url="@Url.Page("PDV","BuscarClientes")" data-seller-url="@Url.Page("PDV","BuscarVendedores")" data-finish-url="@Url.Page("PDV","Finalizar")">
+<div id="pdvApp" class="pdv-app" data-product-url="@Url.Page("PDV","BuscarProdutos")" data-client-url="@Url.Page("PDV","BuscarClientes")" data-seller-url="@Url.Page("PDV","BuscarVendedores")" data-finish-url="@Url.Page("PDV","Finalizar")">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h1 class="mb-0">
@@ -11,8 +11,9 @@
                 Selecione cliente, vendedor e produtos
             </small>
         </div>
-        <div class="display-6 fw-bold text-primary" id="totalGeral">
-            R$ 0,00
+        <div id="totalGeral" class="pdv-totalizer text-end" role="button" tabindex="0" title="Enter para fechar a venda">
+            <small>Total da venda</small>
+            <strong>R$ 0,00</strong>
         </div>
     </div>
     <div class="row g-3">
@@ -22,8 +23,12 @@
                     <label class="form-label">
                         Pesquisar produto por nome, referência, código ou EAN
                     </label>
-                    <input id="buscaProduto" class="form-control form-control-lg" placeholder="Comece a digitar..." autocomplete="off">
-                    <div id="resultadosProduto" class="list-group position-absolute start-0 end-0 mx-3 shadow" style="z-index:1050">
+                    <span class="pdv-field-shortcut float-end">F1 / F2</span>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                        <input id="buscaProduto" class="form-control" placeholder="Digite ou leia o código de barras..." autocomplete="off">
+                    </div>
+                    <div id="resultadosProduto" class="list-group pdv-autocomplete position-absolute start-0 end-0 mx-3 shadow" style="z-index:1050">
                     </div>
                 </div>
                 <div class="table-responsive">
@@ -62,23 +67,26 @@
                         <label class="form-label">
                             Cliente
                         </label>
+                        <span class="pdv-field-shortcut position-absolute end-0 top-0">F3</span>
                         <input id="buscaCliente" class="form-control" placeholder="Nome ou código" autocomplete="off">
                         <input id="clienteId" type="hidden">
-                        <div id="resultadosCliente" class="list-group position-absolute w-100 shadow" style="z-index:1040">
+                        <div id="resultadosCliente" class="list-group pdv-autocomplete position-absolute w-100 shadow" style="z-index:1040">
                         </div>
                     </div>
                     <div class="position-relative mb-3">
                         <label class="form-label">
                             Vendedor
                         </label>
+                        <span class="pdv-field-shortcut position-absolute end-0 top-0">F4</span>
                         <input id="buscaVendedor" class="form-control" placeholder="Nome ou código" autocomplete="off">
                         <input id="vendedorId" type="hidden">
-                        <div id="resultadosVendedor" class="list-group position-absolute w-100 shadow" style="z-index:1030">
+                        <div id="resultadosVendedor" class="list-group pdv-autocomplete position-absolute w-100 shadow" style="z-index:1030">
                         </div>
                     </div>
                     <label class="form-label">
                         Desconto geral
                     </label>
+                    <span class="pdv-field-shortcut float-end">F7</span>
                     <input id="descontoGeral" inputmode="decimal" value="0,00" class="form-control">
                     <hr>
                     <div class="d-flex justify-content-between">
@@ -100,7 +108,7 @@
                 </div>
                 <div class="card-footer">
                     <button id="abrirPagamento" type="button" class="btn btn-success btn-lg w-100" disabled>
-                        Fechar venda
+                        <i class="bi bi-check2-circle me-1"></i> Fechar venda <span class="opacity-75">(F10)</span>
                     </button>
                 </div>
             </div>
@@ -207,6 +215,15 @@
             </div>
         </div>
     </div>
+    <nav class="pdv-shortcuts" aria-label="Atalhos do PDV">
+        <button type="button" data-pdv-shortcut="F2"><kbd>F1/F2</kbd><span>Produto</span></button>
+        <button type="button" data-pdv-shortcut="F3"><kbd>F3</kbd><span>Cliente</span></button>
+        <button type="button" data-pdv-shortcut="F4"><kbd>F4</kbd><span>Vendedor</span></button>
+        <button type="button" data-pdv-shortcut="F7"><kbd>F7</kbd><span>Desconto</span></button>
+        <button type="button" data-pdv-shortcut="F8"><kbd>F8</kbd><span>Excluir item</span></button>
+        <button type="button" data-pdv-shortcut="F10" class="pdv-shortcut-primary"><kbd>F10</kbd><span>Fechar venda</span></button>
+        <button type="button" data-pdv-shortcut="Escape"><kbd>ESC</kbd><span>Voltar/Limpar</span></button>
+    </nav>
     @Html.AntiForgeryToken()
 </div>
 @section Scripts{

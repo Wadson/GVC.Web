@@ -15,6 +15,7 @@ public class DocumentoEntradaItem
     [Column("ProdutoID")]
     public int ProdutoId { get; set; }
 
+    [Column("VariacaoID")]
     public int? VariacaoID { get; set; }
 
     public int Quantidade { get; set; }

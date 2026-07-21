@@ -35,6 +35,7 @@ wwwroot/uploads/**
 *.bak
 *.bacpac
 *.sql
+!Scripts/NormalizarStatusVendaParcela.sql
 *.dump
 
 # Certificados e chaves privadas

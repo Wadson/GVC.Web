@@ -135,6 +135,17 @@ public class EditModel(ErpDbContext db, IWebHostEnvironment environment) : BaseP
             Produto.GtinEan = null;
             if (Variacoes.Count == 0) ModelState.AddModelError("Variacoes", "Gere ao menos uma variação.");
             await ValidarVariacoesAsync(Produto.ProdutoId);
+            int[] idsPostados = Variacoes.Where(x => x.VariacaoId > 0).Select(x => x.VariacaoId).ToArray();
+            if (idsPostados.Distinct().Count() != idsPostados.Length)
+                ModelState.AddModelError("Variacoes", "A grade contém variações repetidas.");
+            else if (idsPostados.Length > 0)
+            {
+                int idsValidos = await db.ProdutosVariacoes.AsNoTracking().CountAsync(x =>
+                    idsPostados.Contains(x.VariacaoId) && x.ProdutoId == Produto.ProdutoId &&
+                    x.Produto.EmpresaId == EmpresaId);
+                if (idsValidos != idsPostados.Length)
+                    ModelState.AddModelError("Variacoes", "Uma ou mais variações não pertencem a este produto.");
+            }
         }
         if (Produto.PrecoCusto < 0 || Produto.PrecoDeVenda < 0 || Produto.PrecoCompra < 0)
             ModelState.AddModelError(string.Empty, "Preços não podem ser negativos.");

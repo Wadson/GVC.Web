@@ -7,7 +7,36 @@ gvcUpdateThemeToggle();
 
 window.gvcClienteForm=()=>{const tipo=document.getElementById('tipoPessoa');if(!tipo)return;const update=()=>{const pj=tipo.value==='PJ';document.querySelectorAll('.pf-field').forEach(x=>x.classList.toggle('d-none',pj));document.querySelectorAll('.pj-field').forEach(x=>x.classList.toggle('d-none',!pj));document.querySelectorAll('.document-mask').forEach(x=>x.disabled=true);const current=document.querySelector(`.${pj?'pj':'pf'}-field .document-mask`);if(current)current.disabled=false};tipo.addEventListener('change',update);update()};
 
-window.gvcKeyboardList=(input,container,onSelect)=>{let index=-1;const buttons=()=>[...container.querySelectorAll('button:not([disabled])')];const paint=items=>{items.forEach((item,i)=>item.classList.toggle('active',i===index));if(index>=0)items[index].scrollIntoView({block:'nearest'})};input.addEventListener('keydown',event=>{const items=buttons();if(!items.length)return;if(event.key==='ArrowDown'){event.preventDefault();index=(index+1)%items.length;paint(items)}else if(event.key==='ArrowUp'){event.preventDefault();index=index<=0?items.length-1:index-1;paint(items)}else if(event.key==='Enter'&&index>=0){event.preventDefault();onSelect(items[index]);index=-1}});return()=>{index=-1}};
+window.gvcKeyboardList=(input,container,onSelect)=>{
+ let index=-1;
+ const buttons=()=>[...container.querySelectorAll('button:not([disabled])')];
+ const paint=items=>{
+  items.forEach((item,i)=>item.classList.toggle('active',i===index));
+  if(index>=0&&items[index])items[index].scrollIntoView({block:'nearest'});
+ };
+ const reset=()=>{index=-1;buttons().forEach(item=>item.classList.remove('active'))};
+ const activatePointerItem=event=>{
+  const item=event.target.closest('button:not([disabled])');
+  if(!item||!container.contains(item))return;
+  const items=buttons(),nextIndex=items.indexOf(item);
+  if(nextIndex!==index){index=nextIndex;paint(items)}
+ };
+ input.addEventListener('keydown',event=>{
+  const items=buttons();
+  if(!items.length)return;
+  if(event.key==='ArrowDown'){
+   event.preventDefault();index=(index+1)%items.length;paint(items);
+  }else if(event.key==='ArrowUp'){
+   event.preventDefault();index=index<=0?items.length-1:index-1;paint(items);
+  }else if(event.key==='Enter'&&index>=0){
+   event.preventDefault();const selected=items[index];reset();onSelect(selected);
+  }
+ });
+ container.addEventListener('pointermove',activatePointerItem);
+ container.addEventListener('focusin',activatePointerItem);
+ new MutationObserver(reset).observe(container,{childList:true});
+ return reset;
+};
 
 window.gvcCitySearch=()=>document.querySelectorAll('[data-city-search]').forEach(input=>{if(input.dataset.ready)return;input.dataset.ready='1';const hidden=document.getElementById(input.dataset.cityTarget),results=input.parentElement.querySelector('[data-city-results]');let timer;const choose=button=>{hidden.value=button.dataset.id;input.value=button.dataset.label;results.innerHTML='';reset()};const reset=window.gvcKeyboardList(input,results,choose);input.addEventListener('input',()=>{hidden.value='';clearTimeout(timer);results.innerHTML='';reset();if(input.value.trim().length<2)return;timer=setTimeout(async()=>{const response=await fetch(`/Cidades/Buscar?termo=${encodeURIComponent(input.value.trim())}`);if(!response.ok)return;const cities=await response.json();results.innerHTML=cities.map(x=>`<button type="button" class="list-group-item list-group-item-action" data-id="${x.id}" data-label="${x.nome} - ${x.uf}">${x.id} - ${x.nome} - ${x.uf}</button>`).join('')},250)});results.addEventListener('click',event=>{const button=event.target.closest('button');if(button)choose(button)});document.addEventListener('click',event=>{if(!input.parentElement.contains(event.target)){results.innerHTML='';reset()}})});
 window.gvcCitySearch();

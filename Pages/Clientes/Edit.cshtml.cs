@@ -11,19 +11,18 @@ public class EditModel(ErpDbContext db) : BasePageModel
     [BindProperty]
     public Cliente Cliente { get; set; } = null!;
 
-    public string? CidadeNome
-    {
-        get; private set;
-    }
+    [BindProperty]
+    public string? CidadeNome { get; set; }
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        Cliente = await db.Clientes.AsNoTracking().Include(x => x.Cidade).ThenInclude(x => x!.Estado).SingleOrDefaultAsync(x => x.ClienteId == id && x.EmpresaId == EmpresaId) ?? null!;
+        Cliente = await db.Clientes.AsNoTracking()
+            .SingleOrDefaultAsync(x => x.ClienteId == id && x.EmpresaId == EmpresaId) ?? null!;
 
         if (Cliente is null)
             return NotFound();
 
-        CidadeNome = Cliente.Cidade is null ? null : $"{Cliente.Cidade.Nome} - {Cliente.Cidade.Estado.Uf}";
+        await CarregarCidadeNomeAsync();
 
         return Page();
     }
@@ -51,7 +50,10 @@ public class EditModel(ErpDbContext db) : BasePageModel
             ModelState.AddModelError("Cliente.CidadeId", "Selecione uma cidade válida.");
 
         if (!ModelState.IsValid)
+        {
+            await CarregarCidadeNomeAsync();
             return Page();
+        }
 
         item.Nome = Cliente.Nome;
 
@@ -98,5 +100,19 @@ public class EditModel(ErpDbContext db) : BasePageModel
         TempData["Success"] = "Cliente alterado com sucesso.";
 
         return RedirectToPage("Index");
+    }
+
+    private async Task CarregarCidadeNomeAsync()
+    {
+        if (!Cliente.CidadeId.HasValue)
+        {
+            CidadeNome = null;
+            return;
+        }
+
+        CidadeNome = await db.Cidades.AsNoTracking()
+            .Where(x => x.CidadeId == Cliente.CidadeId.Value)
+            .Select(x => x.Nome + " - " + x.Estado.Uf)
+            .SingleOrDefaultAsync();
     }
 }

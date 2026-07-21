@@ -1,4 +1,5 @@
 using GVC.Web.DTOs;
+using GVC.Web.Models;
 
 namespace GVC.Web.ViewModels;
 
@@ -36,7 +37,7 @@ public sealed class ComprovanteVendaViewModel
     public string ClienteNome { get; set; } = string.Empty;
     public string? ClienteDocumento { get; set; }
     public string? VendedorNome { get; set; }
-    public string Status { get; set; } = string.Empty;
+    public StatusVenda Status { get; set; }
     public decimal TotalBruto { get; set; }
     public decimal TotalDesconto { get; set; }
     public decimal TotalLiquido { get; set; }
@@ -50,7 +51,7 @@ public sealed record ComprovanteVendaItemViewModel(
     decimal Desconto, decimal Subtotal);
 
 public sealed record ComprovanteVendaParcelaViewModel(
-    int Numero, DateTime Vencimento, decimal Valor, string Status);
+    int Numero, DateTime Vencimento, decimal Valor, StatusParcela Status);
 
 public sealed class FechamentoCaixaViewModel
 {

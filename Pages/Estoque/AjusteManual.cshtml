@@ -8,9 +8,11 @@
     <div class="card-body">
         <div asp-validation-summary="ModelOnly" class="text-danger">
         </div>
-        <label asp-for="ProdutoId" class="form-label">
-        </label>
-        <input asp-for="ProdutoId" class="form-control mb-3">
+        <label asp-for="Alvo" class="form-label">Produto / SKU</label>
+        <select asp-for="Alvo" asp-items="Model.Opcoes" class="form-select mb-1">
+            <option value="">Selecione...</option>
+        </select>
+        <span asp-validation-for="Alvo" class="text-danger d-block mb-3"></span>
         <label asp-for="NovoEstoque" class="form-label">
         </label>
         <input asp-for="NovoEstoque" class="form-control mb-3">

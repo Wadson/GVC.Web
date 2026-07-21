@@ -33,7 +33,10 @@ public class PagamentosModel(ErpDbContext db) : BasePageModel
             });
         }
 
-        var caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == EmpresaId && x.Status == "Aberto", cancellationToken);
+        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
+        var caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == EmpresaId &&
+            x.UsuarioAberturaId == UsuarioId && x.DataCaixa == DateTime.Today && x.Status == "Aberto", cancellationToken);
 
         if (caixa is null)
         {
@@ -44,8 +47,6 @@ public class PagamentosModel(ErpDbContext db) : BasePageModel
                 id
             });
         }
-
-        await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
         var parcela = await db.Parcelas.SingleOrDefaultAsync(x => x.ParcelaId == id && x.EmpresaId == EmpresaId, cancellationToken);
 
@@ -81,20 +82,20 @@ public class PagamentosModel(ErpDbContext db) : BasePageModel
 
         if (totalRestante >= parcela.ValorParcela - 0.01m)
         {
-            parcela.Status = "Pago";
+            parcela.Status = StatusParcela.Pago;
 
             parcela.DataPagamento = restantes.Max(x => (DateTime?)x.DataPagamento);
         }
         else
             if (totalRestante > 0)
             {
-                parcela.Status = "ParcialmentePago";
+                parcela.Status = StatusParcela.ParcialmentePago;
 
                 parcela.DataPagamento = null;
             }
             else
             {
-                parcela.Status = parcela.DataVencimento.Date < DateTime.Today ? "Atrasada" : "Pendente";
+                parcela.Status = StatusParcela.Pendente;
 
                 parcela.DataPagamento = null;
             }

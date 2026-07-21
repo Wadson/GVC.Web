@@ -7,12 +7,19 @@
             Venda #@Model.Venda.VendaId
         </h1>
         <p class="text-secondary">
-            @Model.Venda.Cliente.Nome · @Model.Venda.DataVenda.ToString("g") · @Model.Venda.StatusVenda
+            @Model.Venda.Cliente.Nome · @Model.Venda.DataVenda.ToString("g") · @Model.Venda.StatusVenda.Descricao()
         </p>
     </div>
-    <strong class="fs-3">
-        @Model.Venda.TotalLiquido.ToString("C")
-    </strong>
+    <div class="text-end">
+        <strong class="fs-3 d-block">@Model.Venda.TotalLiquido.ToString("C")</strong>
+        @if (Model.Venda.StatusVenda != StatusVenda.Cancelada)
+        {
+            <form method="post" asp-page-handler="Cancelar" asp-route-id="@Model.Venda.VendaId" class="mt-2"
+                  onsubmit="return confirm('Cancelar esta venda e devolver os itens ao estoque?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar venda</button>
+            </form>
+        }
+    </div>
 </div>
 <div class="card card-body mb-3">
     <div class="row">
@@ -129,7 +136,7 @@
                     @((x.ValorRecebido??0).ToString("C"))
                 </td>
                 <td>
-                    @x.Status
+                    @x.StatusAtual.Descricao()
                 </td>
                 <td class="text-end">
                     <a href="/Financeiro/Recebiveis/Pagamentos?id=@x.ParcelaId" class="btn btn-sm btn-outline-primary">

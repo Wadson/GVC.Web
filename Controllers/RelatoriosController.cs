@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GVC.Web.Data;
 using GVC.Web.DTOs;
+using GVC.Web.Models;
 using GVC.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -56,7 +57,9 @@ public sealed class RelatoriosController(ErpDbContext db) : Controller
                     Marca = x.Marca == null ? "Sem marca" : x.Marca.NomeMarca,
                     Codigo = x.Referencia ?? x.ProdutoId.ToString(),
                     Produto = x.NomeProduto,
-                    Estoque = x.Estoque,
+                    Estoque = x.TemVariacao
+                        ? x.Variacoes.Where(v => v.Status == "Ativo").Sum(v => v.Estoque)
+                        : x.Estoque,
                     PrecoCusto = x.PrecoCusto,
                     PrecoVenda = x.PrecoDeVenda
                 }).ToListAsync(cancellationToken)
@@ -72,15 +75,19 @@ public sealed class RelatoriosController(ErpDbContext db) : Controller
         if (!TryGetEmpresaId(out int empresaId)) return Forbid();
         DateTime hoje = DateTime.Today;
         var query = db.Parcelas.AsNoTracking()
-            .Where(x => x.EmpresaId == empresaId && x.Status != "Cancelado");
+            .Where(x => x.EmpresaId == empresaId && x.Status != StatusParcela.Cancelada);
         if (clienteId.HasValue) query = query.Where(x => x.Venda.ClienteId == clienteId.Value);
         if (vencimentoInicial.HasValue) query = query.Where(x => x.DataVencimento >= vencimentoInicial.Value.Date);
         if (vencimentoFinal.HasValue) query = query.Where(x => x.DataVencimento <= vencimentoFinal.Value.Date);
 
         status = status?.Trim();
-        if (status == "Pago") query = query.Where(x => x.Status == "Pago");
-        else if (status == "Atrasado") query = query.Where(x => x.Status != "Pago" && x.DataVencimento < hoje && x.ValorParcela > (x.ValorRecebido ?? 0));
-        else if (status == "Pendente") query = query.Where(x => x.Status != "Pago" && x.DataVencimento >= hoje && x.ValorParcela > (x.ValorRecebido ?? 0));
+        if (status == "Pago") query = query.Where(x => x.Status == StatusParcela.Pago);
+        else if (status == "Atrasado") query = query.Where(x =>
+            (x.Status == StatusParcela.Pendente || x.Status == StatusParcela.Atrasada) &&
+            x.DataVencimento < hoje && x.ValorParcela > (x.ValorRecebido ?? 0));
+        else if (status == "Pendente") query = query.Where(x =>
+            x.Status == StatusParcela.Pendente && x.DataVencimento >= hoje &&
+            x.ValorParcela > (x.ValorRecebido ?? 0));
 
         var parcelas = await query.OrderBy(x => x.Venda.Cliente.Nome).ThenBy(x => x.DataVencimento)
             .Select(x => new
@@ -106,13 +113,15 @@ public sealed class RelatoriosController(ErpDbContext db) : Controller
                 {
                     Cliente = g.Key.Cliente,
                     Documento = g.Key.Documento,
-                    TotalVencido = g.Where(x => x.Status != "Pago" && x.DataVencimento < hoje).Sum(x => x.ValorParcela - x.Recebido),
-                    TotalAVencer = g.Where(x => x.Status != "Pago" && x.DataVencimento >= hoje).Sum(x => x.ValorParcela - x.Recebido),
-                    SaldoDevedor = g.Where(x => x.Status != "Pago").Sum(x => x.ValorParcela - x.Recebido),
+                    TotalVencido = g.Where(x => x.Status != StatusParcela.Pago && x.DataVencimento < hoje).Sum(x => x.ValorParcela - x.Recebido),
+                    TotalAVencer = g.Where(x => x.Status != StatusParcela.Pago && x.DataVencimento >= hoje).Sum(x => x.ValorParcela - x.Recebido),
+                    SaldoDevedor = g.Where(x => x.Status != StatusParcela.Pago).Sum(x => x.ValorParcela - x.Recebido),
                     Parcelas = g.Select(x => new RelatorioInadimplenciaParcelaViewModel(
                         x.VendaId, x.NumeroParcela, x.DataVencimento, x.ValorParcela,
                         x.Recebido, x.ValorParcela - x.Recebido,
-                        x.Status == "Pago" ? "Pago" : x.DataVencimento < hoje ? "Atrasado" : "Pendente")).ToList()
+                        x.Status == StatusParcela.Pago ? StatusParcela.Pago.Descricao() :
+                        x.Status == StatusParcela.ParcialmentePago ? StatusParcela.ParcialmentePago.Descricao() :
+                        x.DataVencimento < hoje ? StatusParcela.Atrasada.Descricao() : StatusParcela.Pendente.Descricao())).ToList()
                 }).OrderBy(x => x.Cliente).ToList()
         };
         return View("~/Views/ContasAReceber/Inadimplencia.cshtml", model);

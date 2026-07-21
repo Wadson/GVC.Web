@@ -24,7 +24,7 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
         if (!await LoadAsync(id))
             return NotFound();
 
-        if (Parcela.Status is "Pago" or "Cancelada")
+        if (!Parcela.PodeReceber)
         {
             TempData["Error"] = "Esta parcela não está disponível para recebimento.";
 
@@ -45,7 +45,7 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
 
         var saldo = Saldo;
 
-        if (Parcela.Status is "Pago" or "Cancelada")
+        if (!Parcela.PodeReceber)
             ModelState.AddModelError(string.Empty, "Esta parcela não está disponível para recebimento.");
 
         if (Input.Valor <= 0 || Input.Valor > saldo)
@@ -57,7 +57,8 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
         if (!await db.FormasPagamento.AnyAsync(x => x.FormaPgtoId == Input.FormaPagamentoId && x.Ativo, cancellationToken))
             ModelState.AddModelError("Input.FormaPagamentoId", "Selecione uma forma de pagamento válida.");
 
-        var caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == EmpresaId && x.Status == "Aberto", cancellationToken);
+        var caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == EmpresaId &&
+            x.UsuarioAberturaId == UsuarioId && x.DataCaixa == DateTime.Today && x.Status == "Aberto", cancellationToken);
 
         if (caixa is null)
             ModelState.AddModelError(string.Empty, "Abra o caixa antes de receber uma conta.");
@@ -67,7 +68,21 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
 
         await using var transaction = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
 
+        caixa = await db.Caixas.SingleOrDefaultAsync(x => x.EmpresaId == EmpresaId &&
+            x.UsuarioAberturaId == UsuarioId && x.DataCaixa == DateTime.Today && x.Status == "Aberto", cancellationToken);
+        if (caixa is null)
+        {
+            ModelState.AddModelError(string.Empty, "O caixa foi fechado. Abra um caixa antes de receber.");
+            return Page();
+        }
+
         var entity = await db.Parcelas.SingleAsync(x => x.ParcelaId == Input.ParcelaId && x.EmpresaId == EmpresaId, cancellationToken);
+
+        if (entity.Status is StatusParcela.Pago or StatusParcela.Cancelada)
+        {
+            ModelState.AddModelError(string.Empty, "A situação da parcela foi alterada. Recarregue a página.");
+            return Page();
+        }
 
         var saldoAtual = entity.ValorParcela - (entity.ValorRecebido ?? 0);
 
@@ -82,7 +97,7 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
 
         var quitada = entity.ValorRecebido >= entity.ValorParcela - 0.01m;
 
-        entity.Status = quitada ? "Pago" : "ParcialmentePago";
+        entity.Status = quitada ? StatusParcela.Pago : StatusParcela.ParcialmentePago;
 
         entity.DataPagamento = quitada ? Input.DataPagamento.Date : null;
 
@@ -92,7 +107,7 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
 
         await db.SaveChangesAsync(cancellationToken);
 
-        db.CaixaMovimentos.Add(new CaixaMovimento { CaixaId = caixa!.CaixaId, EmpresaId = EmpresaId, UsuarioId = UsuarioId, FormaPgtoId = Input.FormaPagamentoId, Tipo = "ENTRADA", Valor = Input.Valor, Historico = $"Recebimento parcela {entity.NumeroParcela} da venda #{entity.VendaId}", Origem = "Recebimento", ReferenciaId = pagamento.PagamentoId, DataHora = DateTime.Now });
+        db.CaixaMovimentos.Add(new CaixaMovimento { CaixaId = caixa.CaixaId, EmpresaId = EmpresaId, UsuarioId = UsuarioId, FormaPgtoId = Input.FormaPagamentoId, Tipo = "ENTRADA", Valor = Input.Valor, Historico = $"Recebimento parcela {entity.NumeroParcela} da venda #{entity.VendaId}", Origem = "Recebimento", ReferenciaId = pagamento.PagamentoId, DataHora = DateTime.Now });
 
         await db.SaveChangesAsync(cancellationToken);
 

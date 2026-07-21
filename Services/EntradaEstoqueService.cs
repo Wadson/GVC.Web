@@ -286,7 +286,7 @@ public sealed class EntradaEstoqueService(ErpDbContext db) : IEntradaEstoqueServ
             {
                 DocumentoEntradaId = documento.DocumentoEntradaId,
                 ProdutoId = produto.ProdutoId,
-                VariacaoID = variacao?.VariacaoId,
+                VariacaoID = item.VariacaoID,
                 Quantidade = item.Quantidade,
                 PrecoUnitarioCompra = item.PrecoUnitarioCompra,
                 PrecoCustoUnitario = item.PrecoCustoUnitario,
@@ -298,7 +298,7 @@ public sealed class EntradaEstoqueService(ErpDbContext db) : IEntradaEstoqueServ
             db.MovimentacoesEstoque.Add(new MovimentacaoEstoque
             {
                 ProdutoId = produto.ProdutoId,
-                VariacaoID = variacao?.VariacaoId,
+                VariacaoID = item.VariacaoID,
                 TipoMovimentacao = "ENTRADA",
                 Quantidade = item.Quantidade,
                 EstoqueAnterior = estoqueAnterior,

@@ -17,6 +17,7 @@ public class MovimentacaoEstoque
         get; set;
     }
 
+    [Column("VariacaoID")]
     public int? VariacaoID { get; set; }
 
     [Required, StringLength(20)]

@@ -16,11 +16,29 @@ public class IndexModel(ErpDbContext db, IWebHostEnvironment environment) : Base
         get; set;
     }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(CancellationToken cancellationToken)
     {
-        var query = db.Produtos.AsNoTracking().Where(x => x.EmpresaId == EmpresaId);
+        Produtos = await BuscarProdutosAsync(Pesquisa, cancellationToken);
+    }
 
-        var termo = Pesquisa?.Trim();
+    public async Task<PartialViewResult> OnGetPesquisarAsync(
+        string? pesquisa,
+        CancellationToken cancellationToken)
+    {
+        var produtos = await BuscarProdutosAsync(pesquisa, cancellationToken);
+        return Partial("_ListaProdutos", produtos);
+    }
+
+    private async Task<IReadOnlyList<Produto>> BuscarProdutosAsync(
+        string? pesquisa,
+        CancellationToken cancellationToken)
+    {
+        var query = db.Produtos.AsNoTracking()
+            .Include(x => x.Variacoes)
+                .ThenInclude(x => x.Atributos)
+            .Where(x => x.EmpresaId == EmpresaId);
+
+        var termo = pesquisa?.Trim();
 
         if (!string.IsNullOrWhiteSpace(termo))
         {
@@ -30,15 +48,25 @@ public class IndexModel(ErpDbContext db, IWebHostEnvironment environment) : Base
                 x.NomeProduto.Contains(termo) ||
                 (x.Referencia != null && x.Referencia.Contains(termo)) ||
                 (x.GtinEan != null && x.GtinEan.Contains(termo)) ||
+                x.Variacoes.Any(v =>
+                    (v.Sku != null && v.Sku.Contains(termo)) ||
+                    (v.GtinEan != null && v.GtinEan.Contains(termo)) ||
+                    v.Atributos.Any(a =>
+                        a.NomeAtributo.Contains(termo) ||
+                        a.ValorAtributo.Contains(termo))) ||
                 (codigoValido && x.ProdutoId == codigo));
         }
 
-        Produtos = await query.OrderBy(x => x.NomeProduto).ToListAsync();
+        return await query
+            .OrderBy(x => x.NomeProduto)
+            .ThenBy(x => x.ProdutoId)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostExcluirAsync(int id)
     {
-        var item = await db.Produtos.SingleOrDefaultAsync(x => x.ProdutoId == id && x.EmpresaId == EmpresaId);
+        var item = await db.Produtos.Include(x => x.Variacoes)
+            .SingleOrDefaultAsync(x => x.ProdutoId == id && x.EmpresaId == EmpresaId);
 
         if (item is null)
             return NotFound();
@@ -50,6 +78,8 @@ public class IndexModel(ErpDbContext db, IWebHostEnvironment environment) : Base
             await db.SaveChangesAsync();
 
             ProductImageStorage.Delete(item.Imagem, environment);
+            foreach (var imagem in item.Variacoes.Select(x => x.Imagem).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct())
+                ProductImageStorage.Delete(imagem, environment);
 
             TempData["Success"] = "Produto excluído.";
         }

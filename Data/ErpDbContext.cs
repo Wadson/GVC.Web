@@ -1,9 +1,12 @@
 using GVC.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GVC.Web.Data;
 
-public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(options)
+public class ErpDbContext(
+    DbContextOptions<ErpDbContext> options,
+    IHttpContextAccessor? httpContextAccessor = null) : DbContext(options)
 {
     public DbSet<Estado> Estados => Set<Estado>();
 
@@ -135,6 +138,8 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        b.Entity<MovimentacaoEstoque>().HasIndex(x => x.VariacaoID);
+
         Rel<MovimentacaoEstoque, Fornecedor>(b, x => x.FornecedorId);
 
         Rel<MovimentacaoEstoque, Empresa>(b, x => x.EmpresaId);
@@ -173,6 +178,13 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
 
         Rel<Venda, Empresa>(b, x => x.EmpresaId);
 
+        b.Entity<Venda>()
+            .Property(x => x.StatusVenda)
+            .HasConversion(StatusValueConverters.Venda)
+            .HasMaxLength(20)
+            .HasSentinel((StatusVenda)0)
+            .HasDefaultValue(StatusVenda.Aberta);
+
         b.Entity<ItemVenda>()
             .HasOne(x => x.Venda)
             .WithMany(x => x.Itens)
@@ -188,6 +200,8 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        b.Entity<ItemVenda>().HasIndex(x => x.VariacaoID);
+
         Rel<ItemVenda, Empresa>(b, x => x.EmpresaId);
 
         Rel<FiscalDocumento, Venda>(b, x => x.VendaId);
@@ -197,6 +211,13 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
         Rel<Parcela, Venda>(b, x => x.VendaId);
 
         Rel<Parcela, Empresa>(b, x => x.EmpresaId);
+
+        b.Entity<Parcela>()
+            .Property(x => x.Status)
+            .HasConversion(StatusValueConverters.Parcela)
+            .HasMaxLength(20)
+            .HasSentinel((StatusParcela)0)
+            .HasDefaultValue(StatusParcela.Pendente);
 
         Rel<PagamentoParcial, Parcela>(b, x => x.ParcelaId);
 
@@ -247,6 +268,8 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        b.Entity<DocumentoEntradaItem>().HasIndex(x => x.VariacaoID);
+
         Rel<ProdutoFornecedorMapeamento, Empresa>(b, x => x.EmpresaId);
 
         Rel<ProdutoFornecedorMapeamento, Fornecedor>(b, x => x.FornecedorId);
@@ -274,6 +297,117 @@ public class ErpDbContext(DbContextOptions<ErpDbContext> options) : DbContext(op
         b.Entity<PlanoContas>()
             .HasIndex(x => new { x.EmpresaId, x.CodigoClassificacao })
             .IsUnique();
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ValidarEmpresaDasAlteracoes();
+        ValidarReferenciasDeVariacao();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override async Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        ValidarEmpresaDasAlteracoes();
+        await ValidarReferenciasDeVariacaoAsync(cancellationToken);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ValidarReferenciasDeVariacao()
+    {
+        var referencias = ObterReferenciasDeVariacaoAlteradas();
+        if (referencias.Count == 0) return;
+
+        int[] produtoIds = referencias.Select(x => x.ProdutoId).Distinct().ToArray();
+        int[] variacaoIds = referencias.Where(x => x.VariacaoID.HasValue)
+            .Select(x => x.VariacaoID!.Value).Distinct().ToArray();
+        var produtos = Produtos.AsNoTracking()
+            .Where(x => produtoIds.Contains(x.ProdutoId))
+            .Select(x => new { x.ProdutoId, x.TemVariacao })
+            .ToDictionary(x => x.ProdutoId, x => x.TemVariacao);
+        var variacoes = ProdutosVariacoes.AsNoTracking()
+            .Where(x => variacaoIds.Contains(x.VariacaoId))
+            .Select(x => new { x.VariacaoId, x.ProdutoId })
+            .ToDictionary(x => x.VariacaoId, x => x.ProdutoId);
+
+        ValidarReferenciasDeVariacao(referencias, produtos, variacoes);
+    }
+
+    private async Task ValidarReferenciasDeVariacaoAsync(CancellationToken cancellationToken)
+    {
+        var referencias = ObterReferenciasDeVariacaoAlteradas();
+        if (referencias.Count == 0) return;
+
+        int[] produtoIds = referencias.Select(x => x.ProdutoId).Distinct().ToArray();
+        int[] variacaoIds = referencias.Where(x => x.VariacaoID.HasValue)
+            .Select(x => x.VariacaoID!.Value).Distinct().ToArray();
+        var produtos = await Produtos.AsNoTracking()
+            .Where(x => produtoIds.Contains(x.ProdutoId))
+            .Select(x => new { x.ProdutoId, x.TemVariacao })
+            .ToDictionaryAsync(x => x.ProdutoId, x => x.TemVariacao, cancellationToken);
+        var variacoes = await ProdutosVariacoes.AsNoTracking()
+            .Where(x => variacaoIds.Contains(x.VariacaoId))
+            .Select(x => new { x.VariacaoId, x.ProdutoId })
+            .ToDictionaryAsync(x => x.VariacaoId, x => x.ProdutoId, cancellationToken);
+
+        ValidarReferenciasDeVariacao(referencias, produtos, variacoes);
+    }
+
+    private List<ReferenciaVariacao> ObterReferenciasDeVariacaoAlteradas() => ChangeTracker.Entries()
+        .Where(x => x.State is EntityState.Added or EntityState.Modified)
+        .Select(x => x.Entity switch
+        {
+            ItemVenda item => new ReferenciaVariacao(nameof(ItemVenda), item.ProdutoId, item.VariacaoID),
+            DocumentoEntradaItem item => new ReferenciaVariacao(nameof(DocumentoEntradaItem), item.ProdutoId, item.VariacaoID),
+            MovimentacaoEstoque movimento => new ReferenciaVariacao(nameof(MovimentacaoEstoque), movimento.ProdutoId, movimento.VariacaoID),
+            _ => null
+        })
+        .Where(x => x is not null)
+        .Cast<ReferenciaVariacao>()
+        .ToList();
+
+    private static void ValidarReferenciasDeVariacao(
+        IEnumerable<ReferenciaVariacao> referencias,
+        IReadOnlyDictionary<int, bool> produtos,
+        IReadOnlyDictionary<int, int> variacoes)
+    {
+        foreach (var referencia in referencias)
+        {
+            if (!produtos.TryGetValue(referencia.ProdutoId, out bool temVariacao))
+                throw new InvalidOperationException($"{referencia.Entidade}: produto {referencia.ProdutoId} não encontrado.");
+
+            if (temVariacao && !referencia.VariacaoID.HasValue)
+                throw new InvalidOperationException($"{referencia.Entidade}: o produto {referencia.ProdutoId} controla estoque por variação; informe o VariacaoID.");
+
+            if (referencia.VariacaoID.HasValue &&
+                (!variacoes.TryGetValue(referencia.VariacaoID.Value, out int produtoDaVariacao) ||
+                 produtoDaVariacao != referencia.ProdutoId))
+                throw new InvalidOperationException($"{referencia.Entidade}: a variação {referencia.VariacaoID} não pertence ao produto {referencia.ProdutoId}.");
+        }
+    }
+
+    private sealed record ReferenciaVariacao(string Entidade, int ProdutoId, int? VariacaoID);
+
+    private void ValidarEmpresaDasAlteracoes()
+    {
+        ClaimsPrincipal? user = httpContextAccessor?.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true ||
+            !int.TryParse(user.FindFirstValue("EmpresaID"), out int empresaId) || empresaId <= 0)
+            return;
+
+        foreach (var entry in ChangeTracker.Entries().Where(x =>
+                     x.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
+                     x.Entity is not Empresa))
+        {
+            var property = entry.Metadata.FindProperty("EmpresaId");
+            if (property is null) continue;
+
+            int entidadeEmpresaId = Convert.ToInt32(entry.Property("EmpresaId").CurrentValue);
+            if (entidadeEmpresaId != empresaId)
+                throw new InvalidOperationException("Operação bloqueada: o registro não pertence à empresa ativa.");
+        }
     }
 
     private static void Rel<TDependent, TPrincipal>(ModelBuilder b, System.Linq.Expressions.Expression<Func<TDependent, object?>> fk, DeleteBehavior delete = DeleteBehavior.Restrict) where TDependent : class where TPrincipal : class

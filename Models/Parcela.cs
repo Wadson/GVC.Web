@@ -40,8 +40,16 @@ public class Parcela
         get; set;
     }
 
-    [Required, StringLength(20)]
-    public string Status { get; set; } = "Pendente";
+    public StatusParcela Status { get; set; } = StatusParcela.Pendente;
+
+    [NotMapped]
+    public StatusParcela StatusAtual =>
+        Status == StatusParcela.Pendente && DataVencimento.Date < DateTime.Today
+            ? StatusParcela.Atrasada
+            : Status;
+
+    [NotMapped]
+    public bool PodeReceber => Status is not (StatusParcela.Pago or StatusParcela.Cancelada);
 
     [Column(TypeName = "date")]
     public DateTime? DataPagamento

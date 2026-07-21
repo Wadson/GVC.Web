@@ -1,0 +1,151 @@
+@model IReadOnlyList<GVC.Web.Models.Produto>
+
+@if (Model.Count == 0)
+{
+    <div class="card card-body text-center text-secondary py-5">
+        <i class="bi bi-search fs-2 mb-2" aria-hidden="true"></i>
+        <strong>Nenhum produto encontrado.</strong>
+        <span>Tente pesquisar por outro nome, referência, EAN, SKU ou atributo.</span>
+    </div>
+}
+else
+{
+    <div class="card table-responsive product-list-card">
+        <table class="table table-sm align-middle mb-0 product-list-table">
+            <thead>
+                <tr>
+                    <th class="product-expand-column"><span class="visually-hidden">Expandir variações</span></th>
+                    <th>Foto</th>
+                    <th>Produto / Variação</th>
+                    <th>EAN / SKU</th>
+                    <th class="text-end">Preço</th>
+                    <th class="text-end">Estoque</th>
+                    <th class="text-center">Status</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var produto in Model)
+            {
+                var variacoes = produto.Variacoes
+                    .OrderBy(x => x.Sku)
+                    .ThenBy(x => x.VariacaoId)
+                    .ToList();
+                var possuiVariacoes = produto.TemVariacao && variacoes.Count > 0;
+                var grupoId = $"product-variations-{produto.ProdutoId}";
+
+                <tr class="product-parent-row" data-product-id="@produto.ProdutoId">
+                    <td class="text-center product-expand-column">
+                        @if (possuiVariacoes)
+                        {
+                            <button type="button"
+                                    class="btn btn-sm btn-link product-variations-toggle"
+                                    data-variation-group="@grupoId"
+                                    aria-expanded="false"
+                                    aria-controls="@grupoId"
+                                    title="Mostrar @variacoes.Count variação(ões)">
+                                <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                                <span class="visually-hidden">Mostrar variações de @produto.NomeProduto</span>
+                            </button>
+                        }
+                    </td>
+                    <td>
+                        <img src="@(string.IsNullOrWhiteSpace(produto.Imagem) ? "/images/no-product.svg" : produto.Imagem)"
+                             onerror="this.onerror=null;this.src='/images/no-product.svg'"
+                             alt="@produto.NomeProduto"
+                             class="rounded border product-list-image">
+                    </td>
+                    <td>
+                        <div class="fw-semibold">@produto.NomeProduto</div>
+                        <div class="d-flex flex-wrap gap-1 mt-1">
+                            @if (!string.IsNullOrWhiteSpace(produto.Referencia))
+                            {
+                                <small class="text-secondary">Ref.: @produto.Referencia</small>
+                            }
+                            @if (possuiVariacoes)
+                            {
+                                <span class="badge rounded-pill text-bg-primary">@variacoes.Count variação(ões)</span>
+                            }
+                        </div>
+                    </td>
+                    <td>@(string.IsNullOrWhiteSpace(produto.GtinEan) ? "—" : produto.GtinEan)</td>
+                    <td class="text-end text-nowrap">@produto.PrecoDeVenda.ToString("C")</td>
+                    <td class="text-end fw-semibold">@produto.EstoqueTotal</td>
+                    <td class="text-center">
+                        <span class="badge @(produto.Status == "Ativo" || produto.Status == "Disponível" ? "text-bg-success" : "text-bg-secondary")">
+                            @produto.Status
+                        </span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a asp-page="Edit" asp-route-id="@produto.ProdutoId" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil me-1" aria-hidden="true"></i>Alterar
+                        </a>
+                        <form method="post"
+                              asp-page-handler="Excluir"
+                              asp-route-id="@produto.ProdutoId"
+                              class="d-inline"
+                              onsubmit="return confirm('Excluir este produto?')">
+                            <button class="btn btn-sm btn-outline-danger" title="Excluir produto">
+                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                <span class="visually-hidden">Excluir @produto.NomeProduto</span>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                @foreach (var variacao in variacoes)
+                {
+                    var descricaoAtributos = string.Join(" / ", variacao.Atributos
+                        .OrderBy(x => x.AtributoId)
+                        .Select(x => $"{x.NomeAtributo}: {x.ValorAtributo}"));
+                    var imagemVariacao = string.IsNullOrWhiteSpace(variacao.Imagem) ? produto.Imagem : variacao.Imagem;
+                    var precoVariacao = variacao.PrecoDeVenda ?? produto.PrecoDeVenda;
+
+                    <tr id="@(variacao == variacoes[0] ? grupoId : null)"
+                        class="product-variation-row"
+                        data-variation-row="@grupoId"
+                        hidden>
+                        <td class="product-expand-column"></td>
+                        <td>
+                            <img src="@(string.IsNullOrWhiteSpace(imagemVariacao) ? "/images/no-product.svg" : imagemVariacao)"
+                                 onerror="this.onerror=null;this.src='/images/no-product.svg'"
+                                 alt="Variação de @produto.NomeProduto"
+                                 class="rounded border product-list-image product-variation-image">
+                        </td>
+                        <td class="product-variation-name">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-arrow-return-right text-secondary" aria-hidden="true"></i>
+                                <div>
+                                    <span class="fw-semibold">@(string.IsNullOrWhiteSpace(descricaoAtributos) ? $"Variação #{variacao.VariacaoId}" : descricaoAtributos)</span>
+                                    <small class="d-block text-secondary">Filho de @produto.NomeProduto</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>@(string.IsNullOrWhiteSpace(variacao.GtinEan) ? "—" : variacao.GtinEan)</div>
+                            <small class="text-secondary">SKU: @(string.IsNullOrWhiteSpace(variacao.Sku) ? "—" : variacao.Sku)</small>
+                        </td>
+                        <td class="text-end text-nowrap">@precoVariacao.ToString("C")</td>
+                        <td class="text-end fw-semibold">@variacao.Estoque</td>
+                        <td class="text-center">
+                            <span class="badge @(variacao.Status == "Ativo" ? "text-bg-success" : "text-bg-secondary")">
+                                @variacao.Status
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a asp-page="Edit"
+                               asp-route-id="@produto.ProdutoId"
+                               asp-fragment="variationArea"
+                               class="btn btn-sm btn-outline-secondary"
+                               title="Alterar esta grade">
+                                <i class="bi bi-grid-3x3-gap" aria-hidden="true"></i>
+                                <span class="visually-hidden">Alterar grade de @produto.NomeProduto</span>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+}

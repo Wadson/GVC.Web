@@ -41,6 +41,10 @@
                 </td>
                 <td>
                     @x.Produto.NomeProduto
+                    @if (x.VariacaoID.HasValue)
+                    {
+                        <small class="d-block text-secondary">SKU: @(x.Variacao?.Sku ?? x.VariacaoID.ToString())</small>
+                    }
                 </td>
                 <td>
                     @x.TipoMovimentacao

@@ -47,7 +47,9 @@ public class Produto
     public bool TemVariacao { get; set; }
 
     [NotMapped]
-    public int EstoqueTotal => TemVariacao ? Variacoes.Sum(x => x.Estoque) : Estoque;
+    public int EstoqueTotal => TemVariacao
+        ? Variacoes.Where(x => x.Status == "Ativo").Sum(x => x.Estoque)
+        : Estoque;
 
     public DateTime DataDeEntrada
     {

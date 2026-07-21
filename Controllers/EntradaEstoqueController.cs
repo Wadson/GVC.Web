@@ -135,7 +135,7 @@ public class EntradaEstoqueController(ErpDbContext db, IEntradaEstoqueService se
             .Select(x => new
             {
                 id = x.ProdutoId,
-                variacaoID = (int?)null,
+                variacaoId = (int?)null,
                 codigo = "P" + x.ProdutoId,
                 descricao = x.NomeProduto,
                 referencia = x.Referencia,
@@ -152,7 +152,7 @@ public class EntradaEstoqueController(ErpDbContext db, IEntradaEstoqueService se
             .Select(x => new
             {
                 id = x.ProdutoId,
-                variacaoID = (int?)x.VariacaoId,
+                variacaoId = (int?)x.VariacaoId,
                 codigo = "V" + x.VariacaoId,
                 descricao = x.Produto.NomeProduto + (x.Sku == null ? "" : " - " + x.Sku),
                 referencia = x.Sku ?? x.Produto.Referencia,

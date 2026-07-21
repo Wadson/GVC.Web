@@ -178,3 +178,73 @@ label,
 .field-validation-error {
     font-size: .85rem;
 }
+
+/* PDV: autocomplete acessível e operação por teclado. */
+.pdv-app { padding-bottom: 4.5rem; }
+.pdv-totalizer { min-width:190px; padding:.55rem .9rem; border:1px solid #bfdbfe; border-radius:.75rem; background:#eff6ff; color:#1e3a8a; cursor:pointer; }
+.pdv-totalizer small,.pdv-totalizer strong { display:block; }
+.pdv-totalizer strong { font-size:1.75rem; }
+.pdv-totalizer:focus-visible { outline:3px solid rgba(37,99,235,.3); outline-offset:2px; }
+.pdv-field-shortcut { padding:.08rem .4rem; border:1px solid var(--border-input); border-radius:.3rem; font-size:.7rem; font-weight:700; }
+.pdv-autocomplete { max-height:min(420px,55vh); overflow-y:auto; }
+.pdv-autocomplete .list-group-item-action:hover:not(.active) { background-color:var(--bg-card) !important; color:inherit !important; }
+.pdv-autocomplete .list-group-item-action.active,
+.pdv-autocomplete .list-group-item-action:focus-visible { z-index:2; color:#fff !important; background-color:#1e3a8a !important; border-color:#2563eb !important; }
+.pdv-autocomplete .list-group-item-action.active strong,
+.pdv-autocomplete .list-group-item-action:focus-visible strong { color:#fff !important; }
+.pdv-autocomplete .list-group-item-action.active .text-secondary,
+.pdv-autocomplete .list-group-item-action:focus-visible .text-secondary { color:#e2e8f0 !important; }
+.pdv-autocomplete .list-group-item-action.active .badge,
+.pdv-autocomplete .list-group-item-action:focus-visible .badge { color:#052e16 !important; background:#86efac !important; border:1px solid #dcfce7; }
+#itensVenda tr[data-item-index] { cursor:pointer; }
+#itensVenda tr.pdv-selected-row > * { background-color:rgba(37,99,235,.13) !important; }
+.pdv-shortcuts { position:fixed; right:0; bottom:0; left:0; z-index:1025; display:flex; justify-content:center; gap:.3rem; padding:.5rem max(.75rem,env(safe-area-inset-right)) calc(.5rem + env(safe-area-inset-bottom)); background:rgba(15,23,42,.97); border-top:1px solid #334155; box-shadow:0 -.35rem 1rem rgba(0,0,0,.18); }
+.pdv-shortcuts button { display:flex; align-items:center; gap:.35rem; padding:.35rem .6rem; border:1px solid #475569; border-radius:.45rem; color:#e2e8f0; background:#1e293b; font-size:.78rem; }
+.pdv-shortcuts button:hover,.pdv-shortcuts button:focus-visible { color:#fff; background:#334155; border-color:#60a5fa; }
+.pdv-shortcuts kbd { color:#fff; background:#0f172a; border:1px solid #64748b; }
+.pdv-shortcuts .pdv-shortcut-primary { background:#166534; border-color:#4ade80; }
+[data-bs-theme="dark"] .pdv-totalizer { color:#4ade80; background:#111827; border-color:#374151; }
+@media (max-width:767.98px) {
+    .pdv-shortcuts span { display:none; }
+    .pdv-shortcuts button { padding:.35rem; }
+    .pdv-totalizer { min-width:145px; }
+    .pdv-totalizer strong { font-size:1.25rem; }
+}
+
+/* Produtos: pesquisa incremental e hierarquia pai/variações. */
+.products-index .product-search-loading .input-group::after {
+    width: 1rem;
+    height: 1rem;
+    margin: auto .75rem;
+    content: "";
+    border: .15rem solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: product-search-spinner .65s linear infinite;
+}
+
+@keyframes product-search-spinner {
+    to { transform: rotate(360deg); }
+}
+
+.product-list-table { min-width: 920px; }
+.product-list-table > :not(caption) > * > * { padding: .55rem .6rem; }
+.product-list-image { width: 40px; height: 40px; object-fit: cover; }
+.product-variation-image { width: 34px; height: 34px; }
+.product-expand-column { width: 42px; }
+.product-variations-toggle { color: var(--bs-primary); text-decoration: none; }
+.product-variations-toggle:hover,
+.product-variations-toggle:focus-visible { color: var(--bs-primary); background: rgba(37, 99, 235, .12); }
+.product-variation-row > * { background-color: #f8fafc; border-color: #e2e8f0; }
+.product-variation-row .product-variation-name { padding-left: 1rem; }
+
+[data-bs-theme="dark"] .product-variation-row > * {
+    color: #e2e8f0;
+    background-color: #111827;
+    border-color: #334155;
+}
+
+[data-bs-theme="dark"] .product-parent-row > * { border-color: #334155; }
+[data-bs-theme="dark"] .product-variations-toggle { color: #60a5fa; }
+[data-bs-theme="dark"] .product-variations-toggle:hover,
+[data-bs-theme="dark"] .product-variations-toggle:focus-visible { color: #93c5fd; background: rgba(59, 130, 246, .16); }

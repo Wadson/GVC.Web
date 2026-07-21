@@ -22,6 +22,7 @@ public class ItemVenda
         get; set;
     }
 
+    [Column("VariacaoID")]
     public int? VariacaoID { get; set; }
 
     public int Quantidade

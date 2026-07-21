@@ -47,9 +47,9 @@
             <div class="d-flex flex-wrap gap-3 border rounded p-2">
                 @foreach(var status in Model.StatusDisponiveis){
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="StatusSelecionados" value="@status" id="status_@status" checked="@(Model.StatusSelecionados.Contains(status,StringComparer.OrdinalIgnoreCase) ? "checked" : null)">
+                    <input class="form-check-input" type="checkbox" name="StatusSelecionados" value="@status" id="status_@status" checked="@(Model.StatusSelecionados.Contains(status) ? "checked" : null)">
                     <label class="form-check-label" for="status_@status">
-                        @status
+                        @status.Descricao()
                     </label>
                 </div>
                 }
@@ -211,7 +211,7 @@
                 </td>
             </tr>
             }@foreach(var x in Model.Itens){var saldo=x.ValorParcela-(x.ValorRecebido??0);
-            <tr class="@(x.DataVencimento<DateTime.Today&&x.Status!="Pago"&&x.Status!="Cancelada"?"table-warning":"")">
+            <tr class="@(x.StatusAtual == StatusParcela.Atrasada ? "table-warning" : "")">
                 <td>
                     @x.Venda.Cliente.Nome
                 </td>
@@ -227,7 +227,7 @@
                     @x.DataVencimento.ToString("dd/MM/yyyy")
                 </td>
                 <td>
-                    @x.Status
+                    @x.StatusAtual.Descricao()
                 </td>
                 <td class="text-end">
                     @x.ValorParcela.ToString("C")
@@ -244,7 +244,7 @@
                         </i>
                         Pagamentos
                     </a>
-                    @if(x.Status!="Pago"&&x.Status!="Cancelada"){
+                    @if(x.PodeReceber){
                     <a href="/Financeiro/Recebiveis/Receber?id=@x.ParcelaId" class="btn btn-sm btn-success">
                         <i class="bi bi-cash-coin">
                         </i>

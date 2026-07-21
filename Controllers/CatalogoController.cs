@@ -72,7 +72,8 @@ public sealed class CatalogoController(ErpDbContext db, IWebHostEnvironment envi
                 .OrderBy(x => x.NomeCategoria)
                 .Select(x => new CatalogoFiltroViewModel(x.CategoriaId, x.NomeCategoria,
                     db.Produtos.Count(p => p.EmpresaId == empresaId && p.CategoriaId == x.CategoriaId &&
-                        p.Estoque >= 1 && p.Imagem != null && p.Imagem.Trim() != "" &&
+                        (p.TemVariacao ? p.Variacoes.Any(v => v.Status == "Ativo" && v.Estoque > 0) : p.Estoque >= 1) &&
+                        (p.Imagem != null && p.Imagem.Trim() != "" || p.Variacoes.Any(v => v.Status == "Ativo" && v.Imagem != null)) &&
                         StatusVisiveis.Contains(p.Status))))
                 .ToListAsync(cancellationToken),
             Produtos = await db.Produtos.AsNoTracking().Where(x => x.EmpresaId == empresaId)
@@ -118,8 +119,8 @@ public sealed class CatalogoController(ErpDbContext db, IWebHostEnvironment envi
 
         var baseQuery = db.Produtos.AsNoTracking()
             .Where(x => x.EmpresaId == empresaId &&
-                        x.Estoque >= 1 &&
-                        x.Imagem != null && x.Imagem.Trim() != "" &&
+                        (x.TemVariacao ? x.Variacoes.Any(v => v.Status == "Ativo" && v.Estoque > 0) : x.Estoque >= 1) &&
+                        (x.Imagem != null && x.Imagem.Trim() != "" || x.Variacoes.Any(v => v.Status == "Ativo" && v.Imagem != null)) &&
                         StatusVisiveis.Contains(x.Status));
 
         var categoriasAgrupadas = await baseQuery.Where(x => x.CategoriaId.HasValue)
@@ -150,7 +151,10 @@ public sealed class CatalogoController(ErpDbContext db, IWebHostEnvironment envi
         DateTime agora = DateTime.Now;
         var produtos = await baseQuery.OrderBy(x => x.NomeProduto).Select(x => new
         {
-            x.ProdutoId, Nome = x.NomeProduto, x.Imagem, x.PrecoDeVenda, x.Estoque,
+            x.ProdutoId, Nome = x.NomeProduto,
+            Imagem = x.Imagem ?? x.Variacoes.Where(v => v.Status == "Ativo" && v.Imagem != null).Select(v => v.Imagem).FirstOrDefault(),
+            x.PrecoDeVenda,
+            Estoque = x.TemVariacao ? x.Variacoes.Where(v => v.Status == "Ativo").Sum(v => v.Estoque) : x.Estoque,
             Categoria = x.Categoria == null ? "Sem categoria" : x.Categoria.NomeCategoria,
             Marca = x.Marca == null ? "Sem marca" : x.Marca.NomeMarca,
             Promocao = db.Promocoes.Where(p => p.ProdutoId == x.ProdutoId && p.Ativo && p.DataInicio <= agora && p.DataFim >= agora)

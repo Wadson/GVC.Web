@@ -154,7 +154,8 @@ public class ContasAPagarController(ErpDbContext db) : Controller
         }
 
         var caixa = await db.Caixas.SingleOrDefaultAsync(
-            x => x.EmpresaId == empresaId && x.Status == "Aberto",
+            x => x.EmpresaId == empresaId && x.UsuarioAberturaId == usuarioId &&
+                 x.DataCaixa == DateTime.Today && x.Status == "Aberto",
             cancellationToken);
         if (caixa is null)
         {
@@ -212,7 +213,8 @@ public class ContasAPagarController(ErpDbContext db) : Controller
         }
 
         var caixa = await db.Caixas.SingleOrDefaultAsync(
-            x => x.EmpresaId == empresaId && x.Status == "Aberto",
+            x => x.EmpresaId == empresaId && x.UsuarioAberturaId == usuarioId &&
+                 x.DataCaixa == DateTime.Today && x.Status == "Aberto",
             cancellationToken);
         if (caixa is null)
         {

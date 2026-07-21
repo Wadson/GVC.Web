@@ -1,7 +1,13 @@
 
+using System.Text.Json.Serialization;
+
 namespace GVC.Web.Services;
 
-public sealed record VendaItemInput(int ProdutoId, decimal Quantidade, decimal Desconto, int? VariacaoID = null);
+public sealed record VendaItemInput(
+    int ProdutoId,
+    decimal Quantidade,
+    decimal Desconto,
+    [property: JsonPropertyName("variacaoId")] int? VariacaoID = null);
 
 public sealed record ParcelaVendaInput(int Numero, DateTime DataVencimento, decimal Valor);
 

@@ -32,7 +32,7 @@ public class PDVModel(ErpDbContext db, IVendaService vendaService) : BasePageMod
                          (x.Produto.Referencia != null && x.Produto.Referencia.Contains(termo)) || (codigoValido && x.ProdutoId == codigo)))
             .Select(x => new
             {
-                x.ProdutoId, VariacaoID = (int?)x.VariacaoId, Nome = x.Produto.NomeProduto,
+                x.ProdutoId, VariacaoId = (int?)x.VariacaoId, Nome = x.Produto.NomeProduto,
                 Referencia = x.Sku ?? x.Produto.Referencia, x.GtinEan,
                 PrecoVenda = x.PrecoDeVenda ?? x.Produto.PrecoDeVenda, EstoqueAtual = x.Estoque,
                 Imagem = x.Imagem ?? x.Produto.Imagem, Exato = x.GtinEan == termo,
@@ -40,7 +40,7 @@ public class PDVModel(ErpDbContext db, IVendaService vendaService) : BasePageMod
             }).ToListAsync();
 
         var variacoes = variacoesBanco.Select(x => new ProdutoPdvView(
-            x.ProdutoId, x.VariacaoID,
+            x.ProdutoId, x.VariacaoId,
             x.Atributos.Count == 0 ? x.Nome : x.Nome + " — " + string.Join(" / ", x.Atributos),
             x.Referencia, x.GtinEan, x.PrecoVenda, x.EstoqueAtual, x.Imagem, x.Exato));
 
@@ -105,6 +105,6 @@ FinalizarVendaInput input, CancellationToken cancellationToken)
     public sealed record FormaPagamentoView(int FormaPagamentoId, string Descricao);
 
     private sealed record ProdutoPdvView(
-        int ProdutoId, int? VariacaoID, string Nome, string? Referencia, string? GtinEan,
+        int ProdutoId, int? VariacaoId, string Nome, string? Referencia, string? GtinEan,
         decimal PrecoVenda, int EstoqueAtual, string? Imagem, bool Exato);
 }

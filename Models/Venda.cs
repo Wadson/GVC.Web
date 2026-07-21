@@ -32,8 +32,11 @@ public class Venda
         get; set;
     }
 
-    [Required, StringLength(20)]
-    public string StatusVenda { get; set; } = "Finalizada";
+    public StatusVenda StatusVenda { get; set; } = StatusVenda.Aberta;
+
+    [NotMapped]
+    public bool MovimentouEstoque => StatusVenda is
+        StatusVenda.Concluida or StatusVenda.AguardandoPagamento;
 
     public int? VendedorId
     {

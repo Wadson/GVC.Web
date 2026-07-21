@@ -12,21 +12,28 @@ namespace GVC.Web.Pages.Account;
 
 public class ForgotPasswordModel(ErpDbContext db, IEmailService email) : PageModel
 {
+    [BindProperty, Range(1, int.MaxValue, ErrorMessage = "Selecione a empresa.")]
+    public int EmpresaId { get; set; }
+
     [BindProperty, Required, EmailAddress]
     public string Email { get; set; } = string.Empty;
 
-    public void OnGet()
-    {
-    }
+    public IReadOnlyList<EmpresaOption> Empresas { get; private set; } = [];
+
+    public async Task OnGetAsync() => await CarregarEmpresasAsync();
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
         if (!ModelState.IsValid)
+        {
+            await CarregarEmpresasAsync();
             return Page();
+        }
 
         var normalizedEmail = Email.Trim();
 
-        var user = await db.Usuarios.SingleOrDefaultAsync(x => x.Email == normalizedEmail, cancellationToken);
+        var user = await db.Usuarios.SingleOrDefaultAsync(
+            x => x.Email == normalizedEmail && x.EmpresaId == EmpresaId, cancellationToken);
 
         if (user is not null)
         {
@@ -56,4 +63,11 @@ public class ForgotPasswordModel(ErpDbContext db, IEmailService email) : PageMod
 
         return RedirectToPage("Login");
     }
+
+    private async Task CarregarEmpresasAsync() => Empresas = await db.Empresas.AsNoTracking()
+        .OrderBy(x => x.NomeFantasia ?? x.RazaoSocial)
+        .Select(x => new EmpresaOption(x.EmpresaId, x.NomeFantasia ?? x.RazaoSocial))
+        .ToListAsync();
+
+    public sealed record EmpresaOption(int Id, string Nome);
 }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GVC.Web.Data;
 using GVC.Web.DTOs;
+using GVC.Web.Models;
 using GVC.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -74,7 +75,8 @@ public class DashboardController(IDbContextFactory<ErpDbContext> dbFactory) : Co
             .Where(x => x.EmpresaId == empresaId &&
                         x.DataVenda >= inicio &&
                         x.DataVenda < fim &&
-                        x.StatusVenda != "Cancelada")
+                        (x.StatusVenda == StatusVenda.Concluida ||
+                         x.StatusVenda == StatusVenda.AguardandoPagamento))
             .SumAsync(x => (decimal?)x.TotalLiquido, cancellationToken) ?? 0;
     }
 
@@ -106,7 +108,8 @@ public class DashboardController(IDbContextFactory<ErpDbContext> dbFactory) : Co
                         x.Produto.EmpresaId == empresaId &&
                         x.Venda.DataVenda >= inicio &&
                         x.Venda.DataVenda < fim &&
-                        x.Venda.StatusVenda != "Cancelada")
+                        (x.Venda.StatusVenda == StatusVenda.Concluida ||
+                         x.Venda.StatusVenda == StatusVenda.AguardandoPagamento))
             .GroupBy(_ => 1)
             .Select(grupo => new
             {
@@ -168,7 +171,8 @@ public class DashboardController(IDbContextFactory<ErpDbContext> dbFactory) : Co
             .Where(x => x.EmpresaId == empresaId &&
                         x.DataVenda >= inicio &&
                         x.DataVenda < fim &&
-                        x.StatusVenda != "Cancelada")
+                        (x.StatusVenda == StatusVenda.Concluida ||
+                         x.StatusVenda == StatusVenda.AguardandoPagamento))
             .GroupBy(x => x.DataVenda.Date)
             .Select(grupo => new FaturamentoDiarioDTO
             {

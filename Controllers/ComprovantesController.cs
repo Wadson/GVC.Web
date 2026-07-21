@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using GVC.Web.Data;
+using GVC.Web.Models;
 using GVC.Web.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -66,7 +67,7 @@ public sealed class ComprovantesController(ErpDbContext db) : Controller
 
         if (model is null) return NotFound();
         model.Parcelas = await db.Parcelas.AsNoTracking()
-            .Where(x => x.VendaId == vendaId && x.EmpresaId == empresaId && x.Status != "Cancelado")
+            .Where(x => x.VendaId == vendaId && x.EmpresaId == empresaId && x.Status != StatusParcela.Cancelada)
             .OrderBy(x => x.NumeroParcela)
             .Select(x => new ComprovanteVendaParcelaViewModel(x.NumeroParcela, x.DataVencimento, x.ValorParcela, x.Status))
             .ToListAsync(cancellationToken);
