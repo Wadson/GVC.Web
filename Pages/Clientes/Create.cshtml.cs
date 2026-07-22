@@ -23,10 +23,10 @@ public class CreateModel(ErpDbContext db) : BasePageModel
 
         Cliente.Cnpj = Cliente.Cnpj.OnlyDigits();
 
-        if (Cliente.TipoCliente == "PF" && Cliente.Cpf.Length != 11)
+        if (Cliente.TipoCliente == "PF" && Cliente.Cpf.Length > 0 && Cliente.Cpf.Length != 11)
             ModelState.AddModelError("Cliente.Cpf", "CPF inválido.");
 
-        if (Cliente.TipoCliente == "PJ" && Cliente.Cnpj.Length != 14)
+        if (Cliente.TipoCliente == "PJ" && Cliente.Cnpj.Length > 0 && Cliente.Cnpj.Length != 14)
             ModelState.AddModelError("Cliente.Cnpj", "CNPJ inválido.");
 
         Cliente.EmpresaId = EmpresaId;
@@ -43,12 +43,16 @@ public class CreateModel(ErpDbContext db) : BasePageModel
 
         if (Cliente.TipoCliente == "PF")
         {
+            Cliente.Cpf = string.IsNullOrEmpty(Cliente.Cpf) ? null : Cliente.Cpf;
+
             Cliente.Cnpj = null;
 
             Cliente.Ie = null;
         }
         else
         {
+            Cliente.Cnpj = string.IsNullOrEmpty(Cliente.Cnpj) ? null : Cliente.Cnpj;
+
             Cliente.Cpf = null;
 
             Cliente.DataNascimento = null;

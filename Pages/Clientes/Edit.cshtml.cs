@@ -40,10 +40,10 @@ public class EditModel(ErpDbContext db) : BasePageModel
 
         Cliente.Cnpj = Cliente.Cnpj.OnlyDigits();
 
-        if (Cliente.TipoCliente == "PF" && Cliente.Cpf.Length != 11)
+        if (Cliente.TipoCliente == "PF" && Cliente.Cpf.Length > 0 && Cliente.Cpf.Length != 11)
             ModelState.AddModelError("Cliente.Cpf", "CPF inválido.");
 
-        if (Cliente.TipoCliente == "PJ" && Cliente.Cnpj.Length != 14)
+        if (Cliente.TipoCliente == "PJ" && Cliente.Cnpj.Length > 0 && Cliente.Cnpj.Length != 14)
             ModelState.AddModelError("Cliente.Cnpj", "CNPJ inválido.");
 
         if (Cliente.CidadeId.HasValue && !await db.Cidades.AnyAsync(x => x.CidadeId == Cliente.CidadeId))
@@ -59,7 +59,7 @@ public class EditModel(ErpDbContext db) : BasePageModel
 
         item.TipoCliente = Cliente.TipoCliente;
 
-        item.Cpf = Cliente.TipoCliente == "PF" ? Cliente.Cpf : null;
+        item.Cpf = Cliente.TipoCliente == "PF" && !string.IsNullOrEmpty(Cliente.Cpf) ? Cliente.Cpf : null;
 
         item.Rg = Cliente.TipoCliente == "PF" ? Cliente.Rg : null;
 
@@ -67,7 +67,7 @@ public class EditModel(ErpDbContext db) : BasePageModel
 
         item.DataNascimento = Cliente.TipoCliente == "PF" ? Cliente.DataNascimento : null;
 
-        item.Cnpj = Cliente.TipoCliente == "PJ" ? Cliente.Cnpj : null;
+        item.Cnpj = Cliente.TipoCliente == "PJ" && !string.IsNullOrEmpty(Cliente.Cnpj) ? Cliente.Cnpj : null;
 
         item.Ie = Cliente.TipoCliente == "PJ" ? Cliente.Ie : null;
 
