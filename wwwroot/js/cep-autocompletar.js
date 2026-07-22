@@ -118,8 +118,10 @@
 
                 const city = await matchCity(address.localidade, address.uf, controller.signal);
                 if (city) {
-                    setFieldValue(cityId, city.id);
+                    // A busca limpa o ID ao receber o evento do campo de texto.
+                    // Grave o ID por último para preservar a cidade encontrada pelo CEP.
                     setFieldValue(citySearch, `${city.nome} - ${city.uf}`);
+                    setFieldValue(cityId, city.id);
                     setFeedback(feedback, 'Endereço preenchido automaticamente.', 'success');
                 } else {
                     setFieldValue(cityId, '');

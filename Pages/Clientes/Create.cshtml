@@ -31,7 +31,7 @@
             <label asp-for="Cliente.Cpf" class="form-label">
                 CPF
             </label>
-            <input asp-for="Cliente.Cpf" class="form-control document-mask">
+            <input asp-for="Cliente.Cpf" class="form-control document-mask" data-mask="cpf" inputmode="numeric">
         </div>
         <div class="col-md-4 pf-field">
             <label asp-for="Cliente.Rg" class="form-label">
@@ -55,7 +55,7 @@
             <label asp-for="Cliente.Cnpj" class="form-label">
                 CNPJ
             </label>
-            <input asp-for="Cliente.Cnpj" class="form-control document-mask">
+            <input asp-for="Cliente.Cnpj" class="form-control document-mask" data-mask="cnpj" inputmode="numeric">
         </div>
         <div class="col-md-4 pj-field">
             <label asp-for="Cliente.Ie" class="form-label">
