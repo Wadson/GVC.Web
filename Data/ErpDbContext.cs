@@ -76,6 +76,8 @@ public class ErpDbContext(
 
     public DbSet<ProdutoFornecedorMapeamento> ProdutosFornecedoresMapeamentos => Set<ProdutoFornecedorMapeamento>();
 
+    public DbSet<DataVersion> DataVersions => Set<DataVersion>();
+
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<Cidade>().HasOne(x => x.Estado).WithMany(x => x.Cidades).HasForeignKey(x => x.EstadoId).OnDelete(DeleteBehavior.Restrict);

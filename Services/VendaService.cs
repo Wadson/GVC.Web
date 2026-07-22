@@ -2,15 +2,25 @@ using System.Data;
 using GVC.Web.Data;
 using GVC.Web.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GVC.Web.Services;
 
-public sealed class VendaService(ErpDbContext db) : IVendaService
+public sealed class VendaService(ErpDbContext db, ILogger<VendaService>? serviceLogger = null) : IVendaService
 {
+    private readonly ILogger<VendaService> logger = serviceLogger ?? NullLogger<VendaService>.Instance;
+
     public async Task<long> FinalizarAsync(int empresaId, int usuarioId, FinalizarVendaInput input, CancellationToken ct)
     {
+        logger.LogInformation(
+            "Iniciando finalização de venda para empresa {EmpresaId} pelo usuário {UsuarioId}. Cliente {ClienteId}, itens {QuantidadeItens}",
+            empresaId, usuarioId, input.ClienteId, input.Itens?.Count ?? 0);
+
         if (input.ClienteId is null)
+        {
+            logger.LogWarning("Venda rejeitada: cliente não informado. Empresa {EmpresaId}, usuário {UsuarioId}", empresaId, usuarioId);
             throw new InvalidOperationException("Informe o cliente.");
+        }
 
         if (input.Itens is null || input.Itens.Count == 0)
             throw new InvalidOperationException("Adicione ao menos um item.");
@@ -21,7 +31,12 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
 
         if (!await db.Clientes.AnyAsync(x => x.ClienteId == input.ClienteId && x.EmpresaId == empresaId && x.Status == 1, ct))
+        {
+            logger.LogWarning(
+                "Venda rejeitada: cliente {ClienteId} inválido para empresa {EmpresaId}",
+                input.ClienteId, empresaId);
             throw new InvalidOperationException("Cliente inválido.");
+        }
 
         if (input.VendedorId.HasValue && !await db.Vendedores.AnyAsync(x => x.VendedorId == input.VendedorId && x.EmpresaId == empresaId && x.Status == 1, ct))
             throw new InvalidOperationException("Vendedor inválido.");
@@ -146,6 +161,10 @@ public sealed class VendaService(ErpDbContext db) : IVendaService
         await db.SaveChangesAsync(ct);
 
         await tx.CommitAsync(ct);
+
+        logger.LogInformation(
+            "Venda {VendaId} concluída. Empresa {EmpresaId}, usuário {UsuarioId}, total {TotalLiquido}, itens {QuantidadeItens}",
+            venda.VendaId, empresaId, usuarioId, venda.TotalLiquido, venda.Itens.Count);
 
         return venda.VendaId;
     }

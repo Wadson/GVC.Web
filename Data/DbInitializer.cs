@@ -52,4 +52,30 @@ public static class DbInitializer
             await SeedPlanoContasAsync(db, empresaId, cancellationToken);
         }
     }
+
+    public static async Task<bool> ApplyDataVersionAsync(
+        ErpDbContext db,
+        string version,
+        string description,
+        Func<ErpDbContext, CancellationToken, Task> apply,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(version);
+        ArgumentNullException.ThrowIfNull(apply);
+
+        if (await db.DataVersions.AsNoTracking().AnyAsync(x => x.Version == version, cancellationToken))
+            return false;
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await apply(db, cancellationToken);
+        db.DataVersions.Add(new DataVersion
+        {
+            Version = version.Trim(),
+            Description = description?.Trim() ?? string.Empty,
+            AppliedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+        return true;
+    }
 }

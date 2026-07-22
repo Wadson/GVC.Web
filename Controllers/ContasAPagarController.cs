@@ -7,13 +7,16 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GVC.Web.Controllers;
 
 [Authorize]
 [Route("ContasAPagar")]
-public class ContasAPagarController(ErpDbContext db) : Controller
+public class ContasAPagarController(ErpDbContext db, ILogger<ContasAPagarController>? controllerLogger = null) : Controller
 {
+    private readonly ILogger<ContasAPagarController> logger = controllerLogger ?? NullLogger<ContasAPagarController>.Instance;
+
     [HttpGet("")]
     [HttpGet("Index")]
     public async Task<IActionResult> Index(
@@ -187,6 +190,10 @@ public class ContasAPagarController(ErpDbContext db) : Controller
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        logger.LogInformation(
+            "Baixa de conta a pagar concluída. Conta {ContaId}, empresa {EmpresaId}, usuário {UsuarioId}, valor {ValorPago}, status {Status}",
+            conta.ContasAPagarId, empresaId, usuarioId, viewModel.ValorPago, conta.Status);
+
         TempData["Success"] = quitada ? "Conta paga com sucesso!" : "Pagamento parcial registrado com sucesso!";
         return RedirectToAction(nameof(Index));
     }
@@ -255,6 +262,10 @@ public class ContasAPagarController(ErpDbContext db) : Controller
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
+        logger.LogInformation(
+            "Pagamento de conta a pagar estornado. Conta {ContaId}, empresa {EmpresaId}, usuário {UsuarioId}, movimentos revertidos {QuantidadeMovimentos}",
+            conta.ContasAPagarId, empresaId, usuarioId, saidas.Count);
+
         TempData["Success"] = "Pagamento estornado com sucesso!";
         return RedirectToAction(nameof(Index));
     }
@@ -280,6 +291,7 @@ public class ContasAPagarController(ErpDbContext db) : Controller
 
         conta.Status = "Cancelado";
         await db.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Conta a pagar {ContaId} cancelada na empresa {EmpresaId}", conta.ContasAPagarId, empresaId);
         TempData["Success"] = "Título cancelado com sucesso!";
         return RedirectToAction(nameof(Index));
     }

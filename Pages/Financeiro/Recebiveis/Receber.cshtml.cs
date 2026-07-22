@@ -5,11 +5,14 @@ using GVC.Web.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GVC.Web.Pages.Financeiro.Recebiveis;
 
-public class ReceberModel(ErpDbContext db) : BasePageModel
+public class ReceberModel(ErpDbContext db, ILogger<ReceberModel>? pageLogger = null) : BasePageModel
 {
+    private readonly ILogger<ReceberModel> logger = pageLogger ?? NullLogger<ReceberModel>.Instance;
+
     public Parcela Parcela { get; private set; } = null!;
 
     public SelectList FormasPagamento { get; private set; } = null!;
@@ -112,6 +115,10 @@ public class ReceberModel(ErpDbContext db) : BasePageModel
         await db.SaveChangesAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Recebimento registrado. Parcela {ParcelaId}, empresa {EmpresaId}, usuário {UsuarioId}, valor {Valor}, status {Status}",
+            entity.ParcelaId, EmpresaId, UsuarioId, Input.Valor, entity.Status);
 
         TempData["Success"] = quitada ? "Parcela quitada com sucesso." : "Pagamento parcial registrado com sucesso.";
 

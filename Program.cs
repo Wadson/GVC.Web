@@ -8,12 +8,17 @@ using Microsoft.AspNetCore.Http.Features;
 using System.Globalization;
 using QuestPDF.Infrastructure;
 using GVC.Web.ModelBinding;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
+builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "GVC.Web")
+    .WriteTo.Console()
+    .WriteTo.Seq(context.Configuration["Serilog:SeqUrl"] ?? "http://localhost:5341"));
 
 QuestPDF.Settings.License = LicenseType.Community;
 
@@ -108,6 +113,18 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("CorrelationId", httpContext.TraceIdentifier);
+        diagnosticContext.Set("EmpresaId", httpContext.User.FindFirst("EmpresaID")?.Value);
+        diagnosticContext.Set("UsuarioId", httpContext.User.FindFirst("UsuarioID")?.Value);
+    };
+});
 
 app.UseHttpsRedirection();
 

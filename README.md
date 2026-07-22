@@ -66,7 +66,7 @@ GVC.Web/
    ```json
    {
      "ConnectionStrings": {
-       "DefaultConnection": "Server=SEU_SERVIDOR;Database=GVC_DB;Trusted_Connection=True;TrustServerCertificate=True;"
+       "ErpConnection": "Server=SEU_SERVIDOR;Database=GVC_DB;Trusted_Connection=True;TrustServerCertificate=True;"
      }
    }
    ```

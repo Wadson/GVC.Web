@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GVC.Web.Middleware;
 
-public sealed class PermissionAuthorizationMiddleware(RequestDelegate next)
+public sealed class PermissionAuthorizationMiddleware(
+    RequestDelegate next,
+    ILogger<PermissionAuthorizationMiddleware> logger)
 {
     private static readonly Dictionary<string, string> ModulePrefixes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -46,6 +48,9 @@ public sealed class PermissionAuthorizationMiddleware(RequestDelegate next)
         if (!TryGetClaim(context.User, "UsuarioID", out int usuarioId) ||
             !TryGetClaim(context.User, "EmpresaID", out int empresaId))
         {
+            logger.LogWarning(
+                "Autorização rejeitada por claims ausentes. Caminho {Path}, correlationId {CorrelationId}",
+                context.Request.Path, context.TraceIdentifier);
             await context.ForbidAsync();
             return;
         }
@@ -73,6 +78,9 @@ public sealed class PermissionAuthorizationMiddleware(RequestDelegate next)
 
         if (!autorizado)
         {
+            logger.LogWarning(
+                "Acesso negado. Empresa {EmpresaId}, usuário {UsuarioId}, módulo {Modulo}, ação {Acao}, caminho {Path}",
+                empresaId, usuarioId, modulo, action, context.Request.Path);
             await context.ForbidAsync();
             return;
         }
